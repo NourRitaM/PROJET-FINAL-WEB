@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { validateEmail } from '../utils/validateEmail.js';
 
 export function SignupPage({ onNavigate }) {
   const { signup } = useAuth();
@@ -8,10 +9,16 @@ export function SignupPage({ onNavigate }) {
   async function handleSubmit(e) {
     e.preventDefault();
     const form = new FormData(e.target);
+    const check = validateEmail(form.get('email'));
+    if (!check.ok) {
+      setError(check.message);
+      return;
+    }
+
     try {
       await signup(
         form.get('name'),
-        form.get('email'),
+        check.email,
         form.get('password'),
         form.get('role')
       );
