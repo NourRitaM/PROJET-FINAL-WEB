@@ -1,21 +1,12 @@
 # PERFORMANCE.md : Session 22
 
-Lighthouse doit etre lance par toi, dans Chrome (DevTools -> Lighthouse -> Analyze), sur le **vrai build** :
 
 ```bash
 cd client && npm run build && npm run preview   # http://localhost:4173, onglet prive, sans extensions
 ```
 
-## Mesures
 
-| | Performance | LCP | INP / TBT | CLS |
-|---|---|---|---|---|
-| **Avant** (sauve le rapport) | A REMPLIR | A REMPLIR | A REMPLIR | A REMPLIR |
-| **Apres** | A REMPLIR | A REMPLIR | A REMPLIR | A REMPLIR |
-
-Objectifs du cours : LCP <= 2,5 s, INP <= 200 ms, CLS <= 0,1.
-
-## Optimisations deja dans le code
+## Optimisations 
 
 | Optimisation | Ou | Effet attendu |
 |---|---|---|
