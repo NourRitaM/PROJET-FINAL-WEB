@@ -2,7 +2,7 @@
 
 
 ```bash
-cd client && npm run build && npm run preview   # http://localhost:4173, onglet prive, sans extensions
+cd client && npm run build && npm run preview   # http://localhost:5173, onglet prive, sans extensions
 ```
 
 
