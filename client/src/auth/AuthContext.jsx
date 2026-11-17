@@ -34,12 +34,18 @@ export function AuthProvider({ children }) {
     saveSession(data);
   }
 
-  async function signup(name, email, password, role) {
+  async function signup({ name, username, email, phone, password, role }) {
     const data = await apiFetch('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, username, email, phone, password, role }),
     });
     saveSession(data);
+  }
+
+  // My Profile : le serveur renvoie l'utilisateur a jour, on le garde (state + localStorage)
+  function updateUser(nextUser) {
+    localStorage.setItem('user', JSON.stringify(nextUser));
+    setUser(nextUser);
   }
 
   function logout() {
@@ -55,7 +61,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:expired', logout);
   }, []);
 
-  const value = { token, user, login, signup, logout };
+  const value = { token, user, login, signup, logout, updateUser };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

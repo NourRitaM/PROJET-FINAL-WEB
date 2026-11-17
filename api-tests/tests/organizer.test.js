@@ -9,15 +9,17 @@ const api = () => request(API_URL);
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
 const stamp = Date.now();
+// Une date toujours dans le futur (les tests ne "perimeront" jamais)
+const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const signup = async (name, role) =>
   (await api().post('/api/auth/signup').send({
-    name, email: `${name}.${stamp}@test.dev`, password: 'hunter22', role,
+    name, username: `${name}#${stamp}`, email: `${name}.${stamp}@test.dev`, password: 'hunter22', role,
   })).body.token;
 
 const activityBody = (overrides = {}) => ({
   title: `Org test ${stamp}`,
   description: 'Created by the API tests',
-  date: '2026-12-20',
+  date: inDays(30),
   time: '10:00',
   endTime: '12:00',
   location: 'Test Hall',

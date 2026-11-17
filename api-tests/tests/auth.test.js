@@ -8,8 +8,8 @@ const api = () => request(API_URL);
 
 // Email unique a chaque lancement : le test peut etre relance sans nettoyer la base
 const stamp = Date.now();
-const alice = { name: 'Alice', email: `alice.${stamp}@test.dev`, password: 'hunter22', role: 'organizer' };
-const bob = { name: 'Bob', email: `bob.${stamp}@test.dev`, password: 'hunter22', role: 'volunteer' };
+const alice = { name: 'Alice', username: `alice#${stamp}`, phone: '+961 70 123 456', email: `alice.${stamp}@test.dev`, password: 'hunter22', role: 'organizer' };
+const bob = { name: 'Bob', username: `bob_${stamp}`, email: `bob.${stamp}@test.dev`, password: 'hunter22', role: 'volunteer' };
 
 let aliceToken;
 let bobToken;
@@ -27,7 +27,9 @@ describe('POST /api/auth/signup', () => {
     const res = await api().post('/api/auth/signup').send(alice);
     expect(res.status).toBe(201);
     expect(res.body.token).toBeTruthy();
-    expect(res.body.user).toMatchObject({ name: 'Alice', email: alice.email, role: 'organizer' });
+    expect(res.body.user).toMatchObject({
+      name: 'Alice', username: alice.username, email: alice.email, phone: alice.phone, role: 'organizer',
+    });
     expect(res.body.user.password_hash).toBeUndefined();
     aliceToken = res.body.token;
   });
@@ -43,13 +45,30 @@ describe('POST /api/auth/signup', () => {
     expect(res.status).toBe(409);
   });
 
+  it('rejects a username already taken with 409 (case-insensitive)', async () => {
+    const res = await api().post('/api/auth/signup').send({
+      ...bob, username: alice.username.toUpperCase(), email: `dup.${stamp}@test.dev`,
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Username already taken');
+  });
+
+  it('rejects a missing username and a bad phone with 400', async () => {
+    const noUser = await api().post('/api/auth/signup').send({ ...bob, username: '', email: `nu.${stamp}@test.dev` });
+    const badPhone = await api().post('/api/auth/signup').send({
+      ...bob, username: `bp${stamp}`, email: `bp.${stamp}@test.dev`, phone: 'abc',
+    });
+    expect(noUser.status).toBe(400);
+    expect(badPhone.status).toBe(400);
+  });
+
   it('rejects a short password with 400', async () => {
-    const res = await api().post('/api/auth/signup').send({ ...bob, email: `short.${stamp}@test.dev`, password: '123' });
+    const res = await api().post('/api/auth/signup').send({ ...bob, username: `short${stamp}`, email: `short.${stamp}@test.dev`, password: '123' });
     expect(res.status).toBe(400);
   });
 
   it('rejects an unknown role with 400', async () => {
-    const res = await api().post('/api/auth/signup').send({ ...bob, email: `role.${stamp}@test.dev`, role: 'admin' });
+    const res = await api().post('/api/auth/signup').send({ ...bob, username: `role${stamp}`, email: `role.${stamp}@test.dev`, role: 'admin' });
     expect(res.status).toBe(400);
   });
 });
@@ -89,29 +108,70 @@ describe('GET /api/auth/me', () => {
   });
 });
 
+describe('PATCH /api/auth/me and /api/auth/password (My Profile)', () => {
+  const asAlice = (r) => r.set('Authorization', `Bearer ${aliceToken}`);
+
+  it('changes phone and email, never returns the hash', async () => {
+    const res = await asAlice(api().patch('/api/auth/me')).send({
+      phone: '+961 71 999 888', email: `alice2.${stamp}@test.dev`,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.phone).toBe('+961 71 999 888');
+    expect(res.body.email).toBe(`alice2.${stamp}@test.dev`);
+    expect(res.body.password_hash).toBeUndefined();
+  });
+
+  it("refuses another member's username with 409 but lets me keep mine", async () => {
+    const taken = await asAlice(api().patch('/api/auth/me')).send({ username: bob.username });
+    expect(taken.status).toBe(409);
+    const own = await asAlice(api().patch('/api/auth/me')).send({ username: alice.username });
+    expect(own.status).toBe(200);
+  });
+
+  it('cannot change the role (ignored)', async () => {
+    const res = await asAlice(api().patch('/api/auth/me')).send({ role: 'volunteer', name: 'Alice B' });
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe('organizer');
+  });
+
+  it('removes the phone with an empty string', async () => {
+    const res = await asAlice(api().patch('/api/auth/me')).send({ phone: '' });
+    expect(res.body.phone).toBeNull();
+  });
+
+  it('rejects a wrong current password (400) and accepts the right one', async () => {
+    const wrong = await asAlice(api().patch('/api/auth/password')).send({ currentPassword: 'nope', newPassword: 'newpass123' });
+    expect(wrong.status).toBe(400);
+    const ok = await asAlice(api().patch('/api/auth/password')).send({ currentPassword: alice.password, newPassword: 'newpass123' });
+    expect(ok.status).toBe(200);
+    const login = await api().post('/api/auth/login').send({ email: `alice2.${stamp}@test.dev`, password: 'newpass123' });
+    expect(login.status).toBe(200);
+  });
+});
+
 describe('roles (403 = known but not allowed)', () => {
-  it('organizer route: 401 without token', async () => {
-    const res = await api().get('/api/demo/organizer');
+  it('organizer space: 401 without token', async () => {
+    const res = await api().get('/api/organizer/activities');
     expect(res.status).toBe(401);
   });
 
-  it("organizer route: Bob's volunteer token gets 403", async () => {
-    const res = await api().get('/api/demo/organizer').set('Authorization', `Bearer ${bobToken}`);
+  it("organizer space: Bob's volunteer token gets 403", async () => {
+    const res = await api().get('/api/organizer/activities').set('Authorization', `Bearer ${bobToken}`);
     expect(res.status).toBe(403);
   });
 
-  it("organizer route: Alice's token gets 200", async () => {
-    const res = await api().get('/api/demo/organizer').set('Authorization', `Bearer ${aliceToken}`);
+  it("organizer space: Alice's token gets 200", async () => {
+    const res = await api().get('/api/organizer/activities').set('Authorization', `Bearer ${aliceToken}`);
     expect(res.status).toBe(200);
   });
 
-  it("volunteer route: Alice's organizer token gets 403", async () => {
-    const res = await api().get('/api/demo/volunteer').set('Authorization', `Bearer ${aliceToken}`);
+  it("my registrations: Alice's organizer token gets 403", async () => {
+    const res = await api().get('/api/registrations/mine').set('Authorization', `Bearer ${aliceToken}`);
     expect(res.status).toBe(403);
   });
 
-  it("volunteer route: Bob's token gets 200", async () => {
-    const res = await api().get('/api/demo/volunteer').set('Authorization', `Bearer ${bobToken}`);
+  it("my registrations: Bob's token gets 200", async () => {
+    const res = await api().get('/api/registrations/mine').set('Authorization', `Bearer ${bobToken}`);
     expect(res.status).toBe(200);
   });
 });

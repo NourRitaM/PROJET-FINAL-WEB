@@ -20,6 +20,7 @@ Les noms de boutons des plateformes changent parfois : suivez l'idée, pas le li
 | `DATABASE_URL` | l'URL Neon / Supabase |
 | `DB_SSL` | `true` |
 | `JWT_SECRET` | une **nouvelle** valeur : `node -p "require('crypto').randomBytes(32).toString('hex')"` |
+| `NODE_ENV` | `production` (le serveur refuse alors de démarrer sans `CLIENT_ORIGIN`) |
 | `CLIENT_ORIGIN` | l'adresse du site Vercel, en `https://`, **sans `/` final** (à remplir à l'étape 4) |
 | `RESEND_API_KEY`, `EMAIL_FROM` | voir étape 5 |
 
@@ -30,7 +31,8 @@ Les noms de boutons des plateformes changent parfois : suivez l'idée, pas le li
 
 1. **New Project** relié au même dépôt.
 2. **Root Directory** : `client` · Framework : Vite · Build : `npm run build` · Output : `dist`.
-3. Variable d'environnement : `VITE_API_URL=https://VOTRE-API.onrender.com` (sans `/` final).
+3. Variable d'environnement : `VITE_API_URL=https://VOTRE-API.onrender.com` (sans `/` final). Elle est lue **au build** : si tu la changes, redéploie.
+   Le fichier `client/vercel.json` (déjà dans le projet) évite le 404 au rafraîchissement d'une page ; pour Netlify, `client/public/_redirects` fait la même chose.
 4. Déployer, puis copier l'adresse du site.
 
 ## 4. Relier les deux
@@ -48,12 +50,24 @@ Erreur CORS dans la console = ces deux adresses ne correspondent pas exactement.
 
 Où sont les deux emails :
 - **Inscription confirmée** : envoyé automatiquement à la création du compte (`server/routes/auth.js`).
-- **Activité annulée** : `notifyActivityCancelled(activityId)` dans `server/email/notifications.js`, à appeler
-  par la route d'annulation quand elle sera écrite (l'exemple est en commentaire dans le fichier).
+- **Activité annulée** : `notifyActivityCancelled(activityId)` est déjà appelée par `PATCH /api/organizer/activities/:id` avec `{ status: 'cancelled' }`.
 
-## 6. Vérification finale
+## 6. CI (GitHub Actions)
+
+`.github/workflows/ci.yml` lance `npm test` côté `server/` et `client/` (et `npm run build`) à chaque push et pull request. Rouge = ne pas déployer. Render peut déployer automatiquement après un CI vert.
+
+## 7. Vérification finale
 
 ```bash
 cd api-tests && API_URL=https://VOTRE-API.onrender.com npm test
 ```
 Puis la checklist manuelle du `README.md` sur l'adresse Vercel.
+
+## Si ça ne marche pas : les 4 suspects
+
+- `blocked by CORS policy` : `CLIENT_ORIGIN` ne correspond pas exactement à l'adresse Vercel.
+- Le site appelle `localhost:3000` : `VITE_API_URL` absente au build -> la définir puis redéployer.
+- 404 au rafraîchissement : `vercel.json` manquant.
+- Le serveur s'arrête au démarrage : variable d'environnement manquante, ou Neon/Supabase refuse la connexion (`DB_SSL=true`).
+
+Site cassé -> onglet Network. API cassée -> logs de Render.

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { Hero } from '../components/Hero.jsx';
 
 export function LoginPage({ onNavigate }) {
   const { login } = useAuth();
@@ -11,14 +12,16 @@ export function LoginPage({ onNavigate }) {
     try {
       await login(form.get('email'), form.get('password'));
       setError('');
+      onNavigate('home');
     } catch (err) {
       setError(err.message);
     }
   }
 
   return (
-    <main>
-      <h1>Log in</h1>
+    <>
+    <Hero variant="full" title="Log in" text="Welcome back! Sign in to find your next volunteer mission." />
+    <main className="narrow">
       <form onSubmit={handleSubmit}>
         <label>
           Email
@@ -36,5 +39,6 @@ export function LoginPage({ onNavigate }) {
         <button type="button" onClick={() => onNavigate('signup')}>Sign up</button>
       </p>
     </main>
+    </>
   );
 }

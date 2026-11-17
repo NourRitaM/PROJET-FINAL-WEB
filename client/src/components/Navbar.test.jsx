@@ -14,14 +14,35 @@ function setup(value, onNavigate = () => {}) {
 
 it('shows log in and sign up when logged out', () => {
   setup({ user: null });
+  expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Sign up' })).toBeInTheDocument();
 });
 
-it('shows the name and role when logged in', () => {
-  setup({ user: { name: 'Alice', role: 'organizer' }, logout: () => {} });
-  expect(screen.getByText('Alice (organizer)')).toBeInTheDocument();
+it('navigates home while logged out', async () => {
+  const onNavigate = vi.fn();
+  setup({ user: null }, onNavigate);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Home' }));
+
+  expect(onNavigate).toHaveBeenCalledWith('home');
+});
+
+it('shows the username beside a profile icon when logged in', () => {
+  setup({ user: { name: 'Alice', username: 'alice.1', role: 'organizer' }, logout: () => {} });
+  expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+  expect(screen.getByText('@alice.1 (organizer)')).toBeInTheDocument();
+  expect(document.querySelector('.navbar-user svg')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Organizer space' })).toBeInTheDocument();
+});
+
+it('navigates home while logged in', async () => {
+  const onNavigate = vi.fn();
+  setup({ user: { name: 'Bob', role: 'volunteer' }, logout: () => {} }, onNavigate);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Home' }));
+
+  expect(onNavigate).toHaveBeenCalledWith('home');
 });
 
 it('calls logout and goes back to login', async () => {
@@ -33,4 +54,29 @@ it('calls logout and goes back to login', async () => {
 
   expect(logout).toHaveBeenCalled();
   expect(onNavigate).toHaveBeenCalledWith('login');
+});
+
+it('shows the volunteer links and navigates to them', async () => {
+  const onNavigate = vi.fn();
+  setup({ user: { name: 'Bob', role: 'volunteer' }, logout: () => {} }, onNavigate);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Activities' }));
+  await userEvent.click(screen.getByRole('button', { name: 'My registrations' }));
+
+  expect(onNavigate).toHaveBeenNthCalledWith(1, 'activities');
+  expect(onNavigate).toHaveBeenNthCalledWith(2, 'registrations');
+});
+
+it('shows My Profile for a volunteer and an organizer', async () => {
+  for (const role of ['volunteer', 'organizer']) {
+    const onNavigate = vi.fn();
+    const { unmount } = render(
+      <AuthContext.Provider value={{ user: { name: 'Sam', role }, logout: () => {} }}>
+        <Navbar onNavigate={onNavigate} />
+      </AuthContext.Provider>
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'My Profile' }));
+    expect(onNavigate).toHaveBeenCalledWith('profile');
+    unmount();
+  }
 });

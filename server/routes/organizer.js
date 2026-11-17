@@ -60,7 +60,10 @@ router.get('/activities', async (req, res) => {
               'registrations', COALESCE(
                 (
                   SELECT json_agg(
-                    json_build_object('id', u.id, 'name', u.name)
+                    json_build_object(
+                      'id', u.id, 'name', u.name, 'username', u.username,
+                      'email', u.email, 'phone', u.phone
+                    )
                     ORDER BY u.name, u.id
                   )
                   FROM registrations r

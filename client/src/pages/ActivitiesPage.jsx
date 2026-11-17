@@ -1,6 +1,7 @@
 // Liste des activites + recherche par date / lieu (Session 14 : state, Session 20 : fetch + hook).
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
+import { Hero } from '../components/Hero.jsx';
 
 export function ActivitiesPage({ onOpenActivity }) {
   // Ce que la personne tape (formulaire) et ce qui est reellement cherche (filtres appliques)
@@ -28,8 +29,9 @@ export function ActivitiesPage({ onOpenActivity }) {
   }
 
   return (
+    <>
+    <Hero variant="full" title="Activities" text="Find an activity near you and join the team." />
     <main>
-      <h1>Activities</h1>
 
       <form className="search-form" onSubmit={handleSearch}>
         <label>
@@ -53,6 +55,7 @@ export function ActivitiesPage({ onOpenActivity }) {
       {error && <p role="alert">{error.message}</p>}
       {data && data.length === 0 && <p>No activity found.</p>}
 
+      <div className="card-grid">
       {data && data.map((a) => (
         <article key={a.id}>
           <h2>{a.title}</h2>
@@ -68,6 +71,8 @@ export function ActivitiesPage({ onOpenActivity }) {
           <button onClick={() => onOpenActivity(a.id)}>View details</button>
         </article>
       ))}
+      </div>
     </main>
+    </>
   );
 }

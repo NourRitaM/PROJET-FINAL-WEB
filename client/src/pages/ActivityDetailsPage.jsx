@@ -3,12 +3,25 @@ import { useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import { apiFetch } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { ConfirmDialog } from '../components/ConfirmDialog.jsx';
+import { Hero } from '../components/Hero.jsx';
 
 export function ActivityDetailsPage({ activityId, onBack }) {
   const { user } = useAuth();
   const { data, loading, error, reload } = useApi(`/api/activities/${activityId}`);
   const [message, setMessage] = useState('');
   const [actionError, setActionError] = useState('');
+  const [pending, setPending] = useState(null); // la mission pour laquelle le pop-up est ouvert
+  const [busy, setBusy] = useState(false);
+
+  // Clic sur "Register" : on ouvre le pop-up, rien n'est enregistre tant que Confirm n'est pas clique.
+  async function handleConfirm() {
+    const missionId = pending.id;
+    setBusy(true);
+    setPending(null);
+    await handleRegister(missionId);
+    setBusy(false);
+  }
 
   async function handleRegister(missionId) {
     setMessage('');
@@ -39,10 +52,10 @@ export function ActivityDetailsPage({ activityId, onBack }) {
   const isVolunteer = user?.role === 'volunteer';
 
   return (
+    <>
+    <Hero title={data.title} text={`${data.date} · ${data.start_time} – ${data.end_time} · ${data.location}`} />
     <main>
-      <button onClick={onBack}>Back to activities</button>
-      <h1>{data.title}</h1>
-      <p>{data.date} · {data.start_time} – {data.end_time} · {data.location}</p>
+      <button className="btn-outline" onClick={onBack}>Back to activities</button>
       {data.description && <p>{data.description}</p>}
       {data.status === 'cancelled' && <p role="alert">This activity has been cancelled.</p>}
 
@@ -63,12 +76,28 @@ export function ActivityDetailsPage({ activityId, onBack }) {
           {m.my_status === 'waiting' && <p role="status">You are on the waiting list.</p>}
 
           {isVolunteer && !m.my_status && data.status === 'open' && (
-            <button onClick={() => handleRegister(m.id)}>
+            <button disabled={busy} onClick={() => setPending(m)}>
               {m.spots_left > 0 ? 'Register' : 'Join the waiting list'}
             </button>
           )}
         </article>
       ))}
+
+      {pending && (
+        <ConfirmDialog
+          title={`You want to be part of "${data.title}"?`}
+          message={
+            pending.spots_left > 0
+              ? `Mission: ${pending.title}. Confirm to take your spot, or discard to cancel.`
+              : `Mission: ${pending.title} is full. Confirm to join the waiting list, or discard to cancel.`
+          }
+          confirmLabel="Confirm"
+          cancelLabel="Discard"
+          onConfirm={handleConfirm}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </main>
+    </>
   );
 }

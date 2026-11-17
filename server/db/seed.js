@@ -1,4 +1,5 @@
 // Donnees de test : npm run db:seed (relancable : repart toujours de zero pour ce compte).
+// Les dates sont calculees : plage Beach cleanup = J+14, Food drive et Library help = J+21 (meme jour, heures qui se chevauchent).
 // Cree un organisateur de test + 3 activites + des missions, dont une mission a 1 seule place
 // ("Solo mission") pour tester la capacite pleine et la liste d'attente.
 import bcrypt from 'bcrypt';
@@ -6,11 +7,18 @@ import { pool } from './pool.js';
 
 const EMAIL = 'seed.organizer@test.dev';
 
+// Dates relatives a aujourd'hui : les activites restent toujours "a venir" quand on relance le seed.
+function inDays(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 try {
   const hash = await bcrypt.hash('hunter22', 12);
   await pool.query(
-    `INSERT INTO users (name, email, password_hash, role)
-     VALUES ('Seed Organizer', $1, $2, 'organizer')
+    `INSERT INTO users (name, username, email, password_hash, role)
+     VALUES ('Seed Organizer', 'seed_organizer', $1, $2, 'organizer')
      ON CONFLICT (email) DO NOTHING`,
     [EMAIL, hash]
   );
@@ -21,11 +29,11 @@ try {
   await pool.query('DELETE FROM activities WHERE organizer_id = $1', [organizerId]);
 
   const activities = [
-    ['Beach cleanup', 'Pick up litter along the shore.', '2026-12-05', '09:00', '12:00', 'Beirut Beach',
+    ['Beach cleanup', 'Pick up litter along the shore.', inDays(14), '09:00', '12:00', 'Beirut Beach',
       [['Collect litter', 5], ['Sort recycling', 3]]],
-    ['Food drive', 'Pack and hand out food boxes.', '2026-12-12', '10:00', '15:00', 'Campus Hall',
+    ['Food drive', 'Pack and hand out food boxes.', inDays(21), '10:00', '15:00', 'Campus Hall',
       [['Pack boxes', 4], ['Solo mission', 1]]],
-    ['Library help', 'Shelve and label donated books.', '2026-12-12', '14:00', '17:00', 'City Library',
+    ['Library help', 'Shelve and label donated books.', inDays(21), '14:00', '17:00', 'City Library',
       [['Shelving', 2]]],
   ];
 

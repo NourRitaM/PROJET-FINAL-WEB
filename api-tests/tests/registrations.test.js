@@ -10,7 +10,7 @@ const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
 const stamp = Date.now();
 const makeVolunteer = (name) => ({
-  name, email: `${name}.${stamp}@test.dev`, password: 'hunter22', role: 'volunteer',
+  name, username: `${name}_${stamp}`, email: `${name}.${stamp}@test.dev`, password: 'hunter22', role: 'volunteer',
 });
 
 let carolToken;
@@ -51,9 +51,12 @@ describe('GET /api/activities', () => {
   });
 
   it('filters by date', async () => {
-    const res = await api().get('/api/activities?date=2026-12-05').set(auth(carolToken));
+    // la date du seed est calculee (J+14) : on la lit dans la liste au lieu de l'ecrire en dur
+    const all = await api().get('/api/activities').set(auth(carolToken));
+    const beachDate = all.body.find((a) => a.title === 'Beach cleanup').date;
+    const res = await api().get(`/api/activities?date=${beachDate}`).set(auth(carolToken));
     expect(res.status).toBe(200);
-    expect(res.body.every((a) => a.date === '2026-12-05')).toBe(true);
+    expect(res.body.every((a) => a.date === beachDate)).toBe(true);
     expect(res.body.some((a) => a.title === 'Beach cleanup')).toBe(true);
   });
 
@@ -143,7 +146,7 @@ describe('Register, duplicate, full mission, cancel, promotion', () => {
   });
 });
 
-// Le seed contient "Food drive" (12/12, 10:00-15:00) et "Library help" (12/12, 14:00-17:00) :
+// Le seed contient "Food drive" (J+21, 10:00-15:00) et "Library help" (J+21, 14:00-17:00) :
 // elles se chevauchent. "Beach cleanup" est un autre jour.
 describe('No two missions at the same time', () => {
   let erinToken;

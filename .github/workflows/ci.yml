@@ -1,0 +1,30 @@
+# Session 23 : CI. A chaque push et pull request, une machine propre installe et teste.
+# Rouge = rien ne part en production (Render / Vercel redeploient apres un CI vert).
+name: CI
+on: [push, pull_request]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: server }
+    env:
+      JWT_SECRET: test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npm test
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: client }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npm test
+      - run: npm run build

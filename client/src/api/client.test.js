@@ -37,3 +37,22 @@ it('fires auth:expired on a 401', async () => {
   expect(onExpired).toHaveBeenCalled();
   window.removeEventListener('auth:expired', onExpired);
 });
+
+it('gives a readable error when the response is not JSON', async () => {
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: false, status: 502, json: async () => { throw new SyntaxError('Unexpected token <'); },
+  });
+
+  await expect(apiFetch('/api/activities')).rejects.toThrow('Request failed (502)');
+});
+
+it('gives a readable error when the server cannot be reached', async () => {
+  globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+
+  await expect(apiFetch('/api/activities')).rejects.toThrow('Cannot reach the server');
+});
+
+it('returns null on a 204 and parses JSON otherwise', async () => {
+  globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+  expect(await apiFetch('/api/x', { method: 'DELETE' })).toBeNull();
+});

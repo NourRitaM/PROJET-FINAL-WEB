@@ -39,6 +39,9 @@ it('registers the volunteer to a mission', async () => {
   setup();
 
   await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
+  expect(screen.getByRole('dialog')).toHaveTextContent('You want to be part of "Food drive"?');
+  expect(fetchMock).toHaveBeenCalledTimes(1); // pas d'inscription avant Confirm
+  await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
   expect(await screen.findByText('You are registered!')).toBeInTheDocument();
   expect(fetchMock.mock.calls[1][0]).toContain('/api/missions/7/register');
@@ -51,6 +54,7 @@ it('shows the server error on a duplicate registration', async () => {
   setup();
 
   await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent('already registered');
 });
@@ -61,4 +65,16 @@ it('hides the register button for an organizer', async () => {
 
   await screen.findByText('Food drive');
   expect(screen.queryByRole('button', { name: 'Register' })).not.toBeInTheDocument();
+});
+
+it('does not register when the user clicks Discard', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => activity });
+  globalThis.fetch = fetchMock;
+  setup();
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledTimes(1); // seulement le chargement de l'activite
 });

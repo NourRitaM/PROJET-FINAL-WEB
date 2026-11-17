@@ -2,11 +2,21 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import { apiFetch } from '../api/client.js';
+import { ConfirmDialog } from '../components/ConfirmDialog.jsx';
+import { Hero } from '../components/Hero.jsx';
 
 export function MyRegistrationsPage() {
   const { data, loading, error, reload } = useApi('/api/registrations/mine');
   const [message, setMessage] = useState('');
   const [actionError, setActionError] = useState('');
+  const [pending, setPending] = useState(null); // l'inscription qu'on est en train de confirmer
+
+  // Yes dans le pop-up : on supprime vraiment. No : l'inscription est gardee.
+  async function handleYes() {
+    const id = pending.id;
+    setPending(null);
+    await handleCancel(id);
+  }
 
   async function handleCancel(id) {
     setMessage('');
@@ -25,8 +35,9 @@ export function MyRegistrationsPage() {
   }
 
   return (
+    <>
+    <Hero title="My registrations" text="Follow your missions and your place on waiting lists." />
     <main>
-      <h1>My registrations</h1>
 
       {message && <p role="status">{message}</p>}
       {actionError && <p role="alert">{actionError}</p>}
@@ -44,9 +55,21 @@ export function MyRegistrationsPage() {
               ? 'Status: confirmed'
               : `Status: waiting list (position ${r.waiting_position})`}
           </p>
-          <button onClick={() => handleCancel(r.id)}>Cancel registration</button>
+          <button onClick={() => setPending(r)}>Delete registration</button>
         </article>
       ))}
+
+      {pending && (
+        <ConfirmDialog
+          title={`Are you sure you want to delete "${pending.activity_title}"?`}
+          message={`Mission: ${pending.mission_title}. It will be removed from your registrations.`}
+          confirmLabel="Yes"
+          cancelLabel="No"
+          onConfirm={handleYes}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </main>
+    </>
   );
 }
