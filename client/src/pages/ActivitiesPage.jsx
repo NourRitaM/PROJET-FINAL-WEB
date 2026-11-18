@@ -30,7 +30,7 @@ export function ActivitiesPage({ onOpenActivity }) {
 
   return (
     <>
-    <Hero variant="full" title="Activities" text="Find an activity near you and join the team." />
+    <Hero title="Activities" text="Find an activity near you and join the team." />
     <main>
 
       <form className="search-form" onSubmit={handleSearch}>

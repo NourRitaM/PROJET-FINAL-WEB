@@ -67,7 +67,7 @@ it('shows the volunteer links and navigates to them', async () => {
   expect(onNavigate).toHaveBeenNthCalledWith(2, 'registrations');
 });
 
-it('shows My Profile for a volunteer and an organizer', async () => {
+it('opens the profile from the username button, with no separate My Profile button', async () => {
   for (const role of ['volunteer', 'organizer']) {
     const onNavigate = vi.fn();
     const { unmount } = render(
@@ -75,7 +75,8 @@ it('shows My Profile for a volunteer and an organizer', async () => {
         <Navbar onNavigate={onNavigate} />
       </AuthContext.Provider>
     );
-    await userEvent.click(screen.getByRole('button', { name: 'My Profile' }));
+    expect(screen.queryByRole('button', { name: 'My Profile' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: `@Sam (${role})` }));
     expect(onNavigate).toHaveBeenCalledWith('profile');
     unmount();
   }

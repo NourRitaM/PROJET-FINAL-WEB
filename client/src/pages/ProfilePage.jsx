@@ -8,6 +8,10 @@ import { useApi } from '../hooks/useApi.js';
 import { validateEmail } from '../utils/validateEmail.js';
 import { readPhoneNumber } from '../utils/phoneNumber.js';
 
+function Required() {
+  return <span className="required-star" aria-hidden="true"> *</span>;
+}
+
 export function ProfilePage() {
   const { updateUser } = useAuth();
   const { data: profile, loading, error, reload } = useApi('/api/auth/me');
@@ -16,6 +20,7 @@ export function ProfilePage() {
   const [message, setMessage] = useState('');
   const [formError, setFormError] = useState('');
 
+  const [showPassword, setShowPassword] = useState(false); // le formulaire mot de passe est cache tant qu'on ne clique pas
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMessage, setPwMessage] = useState('');
   const [pwError, setPwError] = useState('');
@@ -80,6 +85,7 @@ export function ProfilePage() {
         }),
       });
       formEl.reset();
+      setShowPassword(false);
       setPwMessage('Password updated.');
     } catch (err) {
       setPwError(err.message);
@@ -101,12 +107,13 @@ export function ProfilePage() {
             <fieldset disabled={saving}>
               <legend>Your information</legend>
               <p className="profile-hint">Account type: {profile.role}</p>
+              <p className="profile-hint"><span className="required-star">*</span> = required</p>
               <label>
-                Name
+                Name<Required />
                 <input name="name" defaultValue={profile.name} required maxLength={100} />
               </label>
               <label>
-                Username (must be unique)
+                Username (must be unique)<Required />
                 <input
                   name="username"
                   defaultValue={profile.username}
@@ -118,39 +125,60 @@ export function ProfilePage() {
                 />
               </label>
               <label>
-                Email
+                Email<Required />
                 <input name="email" type="email" defaultValue={profile.email} required />
               </label>
-              <PhoneNumberField value={profile.phone} />
+              <PhoneNumberField value={profile.phone} label="Phone number (optional)" />
               {formError && <p role="alert">{formError}</p>}
               {message && <p role="status">{message}</p>}
               <button type="submit">Save changes</button>
             </fieldset>
           </form>
 
-          <form onSubmit={handlePassword}>
-            <fieldset disabled={pwSaving}>
-              <legend>Password</legend>
-              <p className="profile-hint">
-                Your password is stored encrypted (hashed) and can never be shown. Current password: ••••••••
-              </p>
-              <label>
-                Current password
-                <input name="currentPassword" type="password" required autoComplete="current-password" />
-              </label>
-              <label>
-                New password (8 to 72 characters)
-                <input name="newPassword" type="password" required minLength={8} maxLength={72} autoComplete="new-password" />
-              </label>
-              <label>
-                Confirm new password
-                <input name="confirmPassword" type="password" required minLength={8} maxLength={72} autoComplete="new-password" />
-              </label>
-              {pwError && <p role="alert">{pwError}</p>}
+          {!showPassword && (
+            <>
               {pwMessage && <p role="status">{pwMessage}</p>}
-              <button type="submit">Change password</button>
-            </fieldset>
-          </form>
+              <button
+                type="button"
+                onClick={() => {
+                  setPwMessage('');
+                  setPwError('');
+                  setShowPassword(true);
+                }}
+              >
+                Change my password
+              </button>
+            </>
+          )}
+
+          {showPassword && (
+            <form onSubmit={handlePassword}>
+              <fieldset disabled={pwSaving}>
+                <legend>Password</legend>
+                <p className="profile-hint">
+                  Your password is stored encrypted (hashed) and can never be shown.
+                </p>
+                <p className="profile-hint"><span className="required-star">*</span> = required</p>
+                <label>
+                  Current password<Required />
+                  <input name="currentPassword" type="password" required autoComplete="current-password" />
+                </label>
+                <label>
+                  New password (8 to 72 characters)<Required />
+                  <input name="newPassword" type="password" required minLength={8} maxLength={72} autoComplete="new-password" />
+                </label>
+                <label>
+                  Confirm new password<Required />
+                  <input name="confirmPassword" type="password" required minLength={8} maxLength={72} autoComplete="new-password" />
+                </label>
+                {pwError && <p role="alert">{pwError}</p>}
+                <button type="submit">Change password</button>
+                <button type="button" onClick={() => setShowPassword(false)}>
+                  Cancel
+                </button>
+              </fieldset>
+            </form>
+          )}
         </>
       )}
     </main>

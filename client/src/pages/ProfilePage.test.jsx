@@ -22,10 +22,10 @@ it('shows name, username, email and an empty phone, and never a password hash', 
   globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => profile });
   setup();
 
-  expect(await screen.findByLabelText('Name')).toHaveValue('Bob');
+  expect(await screen.findByLabelText(/^Name/)).toHaveValue('Bob');
   expect(screen.getByLabelText(/Username/)).toHaveValue('bob#1');
-  expect(screen.getByLabelText('Email')).toHaveValue('bob@gmail.com');
-  expect(screen.getByLabelText('Phone number')).toHaveValue('');
+  expect(screen.getByLabelText(/^Email/)).toHaveValue('bob@gmail.com');
+  expect(screen.getByLabelText(/^Phone number/)).toHaveValue('');
 });
 
 it('saves a new phone number with PATCH and updates the session', async () => {
@@ -38,7 +38,7 @@ it('saves a new phone number with PATCH and updates the session', async () => {
   const updateUser = vi.fn();
   setup(updateUser);
 
-  await userEvent.type(await screen.findByLabelText('Phone number'), '70 123 456');
+  await userEvent.type(await screen.findByLabelText(/^Phone number/), '70 123 456');
   await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
   expect(await screen.findByText('Profile updated.')).toBeInTheDocument();
@@ -52,7 +52,7 @@ it('does not save a phone number that is invalid for the selected country', asyn
   globalThis.fetch = fetchMock;
   setup();
 
-  await userEvent.type(await screen.findByLabelText('Phone number'), '123');
+  await userEvent.type(await screen.findByLabelText(/^Phone number/), '123');
   await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent('valid phone number');
@@ -65,7 +65,7 @@ it('shows the server error when the username is already taken', async () => {
     .mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: 'Username already taken' }) });
   setup();
 
-  await screen.findByLabelText('Name');
+  await screen.findByLabelText(/^Name/);
   await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Username already taken');
@@ -76,11 +76,23 @@ it('refuses a new password that does not match its confirmation', async () => {
   globalThis.fetch = fetchMock;
   setup();
 
-  await userEvent.type(await screen.findByLabelText('Current password'), 'hunter22');
+  await userEvent.click(await screen.findByRole('button', { name: 'Change my password' }));
+  await userEvent.type(await screen.findByLabelText(/^Current password/), 'hunter22');
   await userEvent.type(screen.getByLabelText(/^New password/), 'newpass123');
-  await userEvent.type(screen.getByLabelText('Confirm new password'), 'different1');
+  await userEvent.type(screen.getByLabelText(/^Confirm new password/), 'different1');
   await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent('do not match');
   expect(fetchMock).toHaveBeenCalledTimes(1); // pas de PATCH envoye
+});
+
+it('hides the password fields until Change my password is clicked', async () => {
+  globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => profile });
+  setup();
+
+  await screen.findByLabelText(/^Name/);
+  expect(screen.queryByLabelText(/^Current password/)).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Change my password' }));
+  expect(screen.getByLabelText(/^Current password/)).toBeInTheDocument();
 });

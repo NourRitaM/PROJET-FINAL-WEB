@@ -1009,3 +1009,23 @@ article fieldset {
   }
 
 }
+
+.required-star {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.navbar-links button.navbar-user {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: var(--grey);
+  border-color: transparent;
+  border-radius: 999px;
+}
+
+.navbar-links button.navbar-user:hover {
+  color: var(--green);
+  background: var(--grey);
+  border-color: transparent;
+}
