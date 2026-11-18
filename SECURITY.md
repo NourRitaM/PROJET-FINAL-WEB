@@ -42,3 +42,71 @@ Pour chaque trou, colle ici la vraie requete et la vraie reponse :
 ## Limite connue (a mentionner a l'oral)
 Le token est dans `localStorage` : un XSS pourrait le lire (Session 21 / 19). C'est accepte pour le cours ;
 en production on utiliserait un cookie `httpOnly; secure; sameSite=lax`.
+
+## Manual verification — 18 November 2026
+
+Target: local API at http://localhost:3000.
+These requests did not modify application data.
+
+### 1. Authentication: protected route without a token
+
+Request:
+
+```powershell
+curl.exe -i http://localhost:3000/api/organizer/activities
+```
+
+Observed response:
+
+```text
+HTTP/1.1 401 Unauthorized
+```
+
+Result: access without a token was rejected.
+
+### 2. Input validation: missing login credentials
+
+Request:
+
+```powershell
+curl.exe -i -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" --data-raw "{}"
+```
+
+Observed response:
+
+```text
+HTTP/1.1 400 Bad Request
+```
+
+```json
+{"error":"Email and password are required"}
+```
+
+Result: missing credentials were rejected with a JSON error.
+
+### 3. Security response headers
+
+Request:
+
+```powershell
+curl.exe -I http://localhost:3000/api/health
+```
+
+Observed response: HTTP 200 OK, with these headers:
+
+- Content-Security-Policy
+- Strict-Transport-Security
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: SAMEORIGIN
+
+The X-Powered-By header was absent.
+
+Result: the API returned the expected security headers.
+Their presence alone does not prove complete application security.
+HTTPS deployment must be verified separately.
+
+### Scope of this verification
+
+These are observations of the current protected version.
+No vulnerable previous version was executed, so these results
+are not a measured before/after security comparison.
