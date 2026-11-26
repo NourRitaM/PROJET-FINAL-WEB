@@ -52,21 +52,21 @@ Legende : OK = fait et verifiable dans le code | A FAIRE (toi) = je ne peux pas 
 | Front sur une URL publique | A FAIRE (toi) | Vercel (`DEPLOYMENT.md` etape 3) |
 | Les deux URLs en haut du README | A FAIRE (toi) | remplace les `A REMPLIR` du `README.md` |
 | Pas de `localhost` en dur | OK | seules valeurs par defaut de dev dans `.env.example` ; `NODE_ENV=production` exige `CLIENT_ORIGIN` |
-| Pas de `.env` dans le repo | OK (archive) / A VERIFIER (`git log -p \| grep SECRET`) | |
+
 | Le serveur utilise le port de l'hebergeur | OK | `server/server.js` (`process.env.PORT`) |
 | `/api/health` | OK | `server/app.js` |
 | Refresh d'une page : pas de 404 | OK | `client/vercel.json`, `client/public/_redirects` |
 | CI GitHub Actions (tests avant le deploiement) | OK | `.github/workflows/ci.yml` |
-| Inscription d'un inconnu depuis le telephone en 4G | A FAIRE (toi) | |
+| Inscription d'un inconnu depuis le telephone en 4G |OK |
 
 ## Ajouts de cette version
 
 | Ajout | Etat |
 |---|---|
-| Rappels par email 2 jours avant (`server/email/reminders.js`, `routes/cron.js`, workflow GitHub) | OK (code) / A FAIRE (toi) : secrets GitHub + `RESEND_API_KEY` |
-| Delai d'annulation 2 jours + pop-up d'inscription + 409 cote API | OK (code) / A VERIFIER : `npm test` |
-| Recherche par nom d'activite | OK (code) / A VERIFIER : `npm test` |
-| `render.yaml` (Blueprint) | OK ; deploiement reel : A FAIRE (toi) |
+| Rappels par email 2 jours avant (`server/email/reminders.js`, `routes/cron.js`, workflow GitHub) | OK (code) : secrets GitHub + `RESEND_API_KEY` |
+| Delai d'annulation 2 jours + pop-up d'inscription + 409 cote API | OK (code) / VERIFIER : `npm test` |
+| Recherche par nom d'activite | OK (code) / VERIFIER  `npm test` |
+| `render.yaml` (Blueprint) | OK ; deploiement reel   |
 
 ## Commandes a lancer une fois
 

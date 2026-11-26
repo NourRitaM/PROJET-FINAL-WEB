@@ -1,6 +1,7 @@
 # PROJET-FINAL-WEB — Volunteer Activity Organizer
 
-**Site en ligne** : A REMPLIR (URL Vercel) · **API en ligne** : A REMPLIR (URL Render, `/api/health`)
+**Site en ligne** : https://volunteer-activity-organizer.vercel.app
+**API**: (https://volunteer-organizer-api.onrender.com)
 
 Suivi des milestones : voir [`MILESTONES.md`](MILESTONES.md) · securite : [`SECURITY.md`](SECURITY.md) · performance : [`PERFORMANCE.md`](PERFORMANCE.md) · schema et maquettes : [`docs/SCHEMA.md`](docs/SCHEMA.md) · mise en ligne : [`DEPLOYMENT.md`](DEPLOYMENT.md)
 
