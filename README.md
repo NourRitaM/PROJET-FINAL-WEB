@@ -5,7 +5,7 @@ Application web pour organiser des activités de bénévolat : les organisateurs
 - **Site en ligne** : https://volunteer-activity-organizer.vercel.app
 - **API** : https://volunteer-organizer-api.onrender.com
 
-> L'API n'a pas de page d'accueil : elle répond sur les routes `/api/...`, et la plupart sont protégées par un token JWT (une requête directe depuis le navigateur renvoie donc `Missing token`, ce qui est le comportement attendu). Pour tester l'application, utiliser le site.
+> La racine de l'API affiche « Volunteer Activity Organizer API is running. ». Les routes `/api/...` sont protégées par un token JWT : une requête directe depuis le navigateur renvoie donc `Missing token`, ce qui est le comportement attendu. Pour tester l'application, utiliser le site.
 >
 > L'API est hébergée sur l'offre gratuite de Render : après 15 minutes d'inactivité, la première requête peut prendre 30 à 60 secondes.
 
