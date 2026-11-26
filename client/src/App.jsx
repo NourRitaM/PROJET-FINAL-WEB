@@ -1,12 +1,12 @@
 import communityLogo from './assets/community-logo.jpg';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth } from './auth/AuthContext.jsx';
 import { Navbar } from './components/Navbar.jsx';
 import { RequireRole } from './components/RequireRole.jsx';
 import { HomePage } from './pages/HomePage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { SignupPage } from './pages/SignupPage.jsx';
-import { getStoredPage, storePage } from './utils/pageState.js';
+import { pathFor, routeFromPath, visibleRoute } from './utils/pageState.js';
 
 const OrganizerPage = lazy(() =>
   import('./pages/OrganizerPage.jsx').then((m) => ({
@@ -41,22 +41,40 @@ const MyRegistrationsPage = lazy(() =>
 export default function App() {
   const { user } = useAuth();
 
-  const [page, setPage] = useState(getStoredPage);
+  // La page vient de l'adresse (ex. /activities/12), plus de sessionStorage
+  const [route, setRoute] = useState(() => routeFromPath(window.location.pathname));
 
-  const [activityId, setActivityId] = useState(() =>
-    sessionStorage.getItem('vo-activity-id')
-  );
+  // Boutons Retour / Avancer du navigateur
+  useEffect(() => {
+    const onPopState = () => setRoute(routeFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  function goTo(next) {
+    const path = pathFor(next);
+    if (path !== window.location.pathname) window.history.pushState(null, '', path);
+    setRoute(next);
+  }
 
   function navigateTo(nextPage) {
-    storePage(nextPage);
-    setPage(nextPage);
+    goTo({ page: nextPage, activityId: null });
   }
 
   function openActivity(id) {
-    sessionStorage.setItem('vo-activity-id', id);
-    setActivityId(id);
-    navigateTo('activity');
+    goTo({ page: 'activity', activityId: String(id) });
   }
+
+  // Ce qui est vraiment affiche (un visiteur sur /activities voit l'accueil, etc.)
+  const { page, activityId } = visibleRoute(user, route);
+  const visiblePath = pathFor({ page, activityId });
+
+  // L'adresse suit toujours la page affichee (ex. apres connexion ou deconnexion)
+  useEffect(() => {
+    if (window.location.pathname !== visiblePath) {
+      window.history.replaceState(null, '', visiblePath);
+    }
+  }, [visiblePath]);
 
   let content;
 
@@ -73,17 +91,10 @@ export default function App() {
   } else if (page === 'profile') {
     content = <ProfilePage />;
   } else if (user.role === 'organizer') {
-    const organizerPage = [
-      'organizer-create',
-      'organizer-activities',
-    ].includes(page)
-      ? page
-      : 'organizer';
-
     content = (
       <RequireRole allowed={['organizer']}>
         <OrganizerPage
-          page={organizerPage}
+          page={page}
           onNavigate={navigateTo}
         />
       </RequireRole>
@@ -113,21 +124,8 @@ export default function App() {
     );
   }
 
-  const transitionKey = !user
-    ? ['login', 'signup'].includes(page)
-      ? page
-      : 'home'
-    : page === 'home' || page === 'profile'
-      ? page
-      : user.role === 'organizer'
-        ? ['organizer-create', 'organizer-activities'].includes(page)
-          ? page
-          : 'organizer'
-        : page === 'registrations'
-          ? 'registrations'
-          : page === 'activity' && activityId
-            ? `activity-${activityId}`
-            : 'activities';
+  // une cle par adresse : l'animation de transition rejoue a chaque changement de page
+  const transitionKey = visiblePath;
 
   return (
     <>

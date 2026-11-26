@@ -9,7 +9,18 @@ Les noms de boutons des plateformes changent parfois : suivez l'idée, pas le li
 2. Sur votre machine, dans `server/.env` : `DATABASE_URL=<cette URL>` et `DB_SSL=true`.
 3. `cd server && npm run db:init` : crée les 4 tables dans la base en ligne.
 
+   Base déjà créée avant l'ajout des rappels ? Relancer `npm run db:init` une fois : il ajoute la colonne
+   `registrations.reminder_sent_at` sans rien effacer.
+
 ## 2. API : Render (Web Service)
+
+**Le plus simple : le Blueprint.** Render → **New → Blueprint** → choisir ce dépôt. Le fichier `render.yaml`
+remplit tous les réglages ; Render génère `JWT_SECRET` et `CRON_SECRET` et vous demande seulement
+`DATABASE_URL`, `CLIENT_ORIGIN` (à remettre à l'étape 4), `RESEND_API_KEY` et `EMAIL_FROM`.
+La commande de build lance aussi `npm run db:init` : les tables sont créées (ou mises à jour) à chaque déploiement.
+
+**À la main** (si vous préférez) : Build Command `npm install && npm run db:init`, et ajouter `CRON_SECRET`
+(valeur aléatoire, voir « Rappels » plus bas).
 
 1. Nouveau **Web Service** relié à votre dépôt GitHub.
 2. **Root Directory** : `server` · **Build Command** : `npm install` · **Start Command** : `npm start`.
@@ -71,3 +82,24 @@ Puis la checklist manuelle du `README.md` sur l'adresse Vercel.
 - Le serveur s'arrête au démarrage : variable d'environnement manquante, ou Neon/Supabase refuse la connexion (`DB_SSL=true`).
 
 Site cassé -> onglet Network. API cassée -> logs de Render.
+
+## Rappels par email (2 jours avant) : les faire partir même quand Render dort
+
+L'API vérifie les rappels au démarrage puis toutes les heures. Sur l'offre gratuite, Render endort l'API
+après ~15 min sans visite : le workflow `.github/workflows/reminders.yml` la réveille chaque jour (06:00 UTC)
+en appelant `POST /api/cron/reminders`. À faire une fois :
+
+1. Render : variable `CRON_SECRET` (générée par le Blueprint).
+2. GitHub : **Settings → Secrets and variables → Actions → New repository secret** :
+   `API_URL` = `https://VOTRE-API.onrender.com` (sans `/` final) et `CRON_SECRET` = la même valeur que dans Render.
+3. Tester : onglet **Actions → Reminder emails → Run workflow**. Réponse attendue : `{"due":0,"sent":0}`.
+
+## Vérification finale (Milestone 4)
+
+```bash
+cd api-tests && API_URL=https://VOTRE-API.onrender.com npm test
+```
+- `https://VOTRE-API.onrender.com/api/health` → `{"status":"ok"}`
+- **Depuis un téléphone en 4G** : créer un compte, s'inscrire à une mission, rafraîchir la page (pas de 404).
+- Remplacer les deux `A REMPLIR` en haut du `README.md` par les vraies adresses, puis
+  `git tag milestone-4 && git push --tags`.

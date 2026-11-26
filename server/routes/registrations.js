@@ -3,8 +3,16 @@ import express from 'express';
 import { query } from '../db/pool.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { CANCEL_DEADLINE_DAYS } from '../rules.js';
 
 const registrationsRouter = express.Router();
+
+// Peut-on encore quitter la mission ? (r = registrations, a = activities, $n = CANCEL_DEADLINE_DAYS)
+// Oui si : on est seulement sur la liste d'attente, OU l'activite est annulee,
+// OU il reste au moins CANCEL_DEADLINE_DAYS jours avant l'activite.
+// La meme regle sert a l'affichage (GET /mine) et a la suppression (DELETE) : un seul endroit a changer.
+const canCancelSql = (n) =>
+  `(r.status = 'waiting' OR a.status = 'cancelled' OR a.date - CURRENT_DATE >= $${n}::int)`;
 
 // GET /api/registrations/mine   (benevole seulement)
 // Declaree AVANT '/:id' pour que "mine" ne soit pas pris pour un id.
@@ -24,13 +32,16 @@ registrationsRouter.get('/mine', requireAuth, requireRole('volunteer'), async (r
               (SELECT COUNT(*)::int FROM registrations w
                 WHERE w.mission_id = r.mission_id AND w.status = 'waiting'
                   AND (w.created_at, w.id) <= (r.created_at, r.id))
-            END AS waiting_position
+            END AS waiting_position,
+            -- delai d'annulation (rules.js) : dernier jour ou l'on peut encore quitter la mission
+            ${canCancelSql(2)} AS can_cancel,
+            to_char(a.date - $2::int, 'YYYY-MM-DD') AS cancel_deadline
        FROM registrations r
        JOIN missions m   ON m.id = r.mission_id
        JOIN activities a ON a.id = m.activity_id
       WHERE r.user_id = $1
       ORDER BY a.date, a.start_time`,
-    [req.userId]
+    [req.userId, CANCEL_DEADLINE_DAYS]
   );
   res.json(rows);
 });
@@ -44,6 +55,25 @@ registrationsRouter.delete('/:id', requireAuth, requireRole('volunteer'), async 
     return res.status(404).json({ error: 'Registration not found' });
   }
 
+  // 1. Mon inscription existe-t-elle, et puis-je encore la quitter ?
+  const found = await query(
+    `SELECT ${canCancelSql(3)} AS can_cancel
+       FROM registrations r
+       JOIN missions m   ON m.id = r.mission_id
+       JOIN activities a ON a.id = m.activity_id
+      WHERE r.id = $1 AND r.user_id = $2`,
+    [id, req.userId, CANCEL_DEADLINE_DAYS]
+  );
+  if (found.rows.length === 0) {
+    return res.status(404).json({ error: 'Registration not found' });
+  }
+  if (!found.rows[0].can_cancel) {
+    return res.status(409).json({
+      error: `Too late to cancel: you can leave a mission up to ${CANCEL_DEADLINE_DAYS} days before the activity.`,
+    });
+  }
+
+  // 2. On supprime (toujours filtre par proprietaire)
   const deleted = await query(
     'DELETE FROM registrations WHERE id = $1 AND user_id = $2 RETURNING mission_id, status',
     [id, req.userId]

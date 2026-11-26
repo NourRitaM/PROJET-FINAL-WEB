@@ -49,6 +49,41 @@ export function sendSignupConfirmation(user) {
   });
 }
 
+// Ligne commune aux emails de mission : "2026-12-12 · 10:00 – 15:00 · Campus Hall"
+function missionLine(r) {
+  return `${esc(r.date)} · ${esc(r.start_time)} – ${esc(r.end_time)} · ${esc(r.location)}`;
+}
+
+// Email 3 : inscription a une mission (confirmee ou liste d'attente)
+export function sendMissionRegistered(r) {
+  const confirmed = r.status === 'confirmed';
+  return sendEmail({
+    to: r.email,
+    subject: confirmed
+      ? `You are registered: ${r.activity_title}`
+      : `Waiting list: ${r.activity_title}`,
+    html: `<p>Hello ${esc(r.name)},</p>
+<p>${confirmed ? 'You are registered for' : 'The mission is full: you are on the waiting list for'}
+the mission <strong>${esc(r.mission_title)}</strong> of <strong>${esc(r.activity_title)}</strong>.</p>
+<p>${missionLine(r)}</p>
+${confirmed
+    ? `<p>You can cancel from "My registrations" until ${esc(r.cancel_deadline)} (2 days before the activity). After that, you can no longer leave.</p>`
+    : '<p>We will move you up automatically if a spot opens.</p>'}`,
+  });
+}
+
+// Email 4 : rappel 1 ou 2 jours avant l'activite (voir email/reminders.js)
+export function sendMissionReminder(r) {
+  return sendEmail({
+    to: r.email,
+    subject: `Reminder: ${r.activity_title} on ${r.date}`,
+    html: `<p>Hello ${esc(r.name)},</p>
+<p>Don't forget: you have the mission <strong>${esc(r.mission_title)}</strong>
+of <strong>${esc(r.activity_title)}</strong>.</p>
+<p>${missionLine(r)}</p>`,
+  });
+}
+
 // Email 2 : activite annulee (un email par benevole)
 export function sendActivityCancelled(activity, recipients) {
   return Promise.all(

@@ -59,6 +59,15 @@ Legende : OK = fait et verifiable dans le code | A FAIRE (toi) = je ne peux pas 
 | CI GitHub Actions (tests avant le deploiement) | OK | `.github/workflows/ci.yml` |
 | Inscription d'un inconnu depuis le telephone en 4G | A FAIRE (toi) | |
 
+## Ajouts de cette version
+
+| Ajout | Etat |
+|---|---|
+| Rappels par email 2 jours avant (`server/email/reminders.js`, `routes/cron.js`, workflow GitHub) | OK (code) / A FAIRE (toi) : secrets GitHub + `RESEND_API_KEY` |
+| Delai d'annulation 2 jours + pop-up d'inscription + 409 cote API | OK (code) / A VERIFIER : `npm test` |
+| Recherche par nom d'activite | OK (code) / A VERIFIER : `npm test` |
+| `render.yaml` (Blueprint) | OK ; deploiement reel : A FAIRE (toi) |
+
 ## Commandes a lancer une fois
 
 ```bash

@@ -55,7 +55,20 @@ export function MyRegistrationsPage() {
               ? 'Status: confirmed'
               : `Status: waiting list (position ${r.waiting_position})`}
           </p>
-          <button onClick={() => setPending(r)}>Delete registration</button>
+          {/* Delai d'annulation : l'API calcule can_cancel et cancel_deadline (server/rules.js) */}
+          {r.can_cancel ? (
+            <>
+              {r.status === 'confirmed' && r.activity_status === 'open' && (
+                <p>You can cancel until {r.cancel_deadline}.</p>
+              )}
+              <button onClick={() => setPending(r)}>Delete registration</button>
+            </>
+          ) : (
+            <>
+              <p>Too late to cancel: the deadline was {r.cancel_deadline}.</p>
+              <button disabled>Delete registration</button>
+            </>
+          )}
         </article>
       ))}
 

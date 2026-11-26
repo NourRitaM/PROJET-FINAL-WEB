@@ -10,6 +10,15 @@ Application web : API Express + PostgreSQL (`server/`), site React + Vite (`clie
 - **Organisateur** (Maria) : `server/routes/organizer.js`, `server/routes/organizerMissions.js`, `client/src/pages/OrganizerPage.jsx`, `client/src/components/MissionVolunteers.jsx`. Le dossier `maria-organizer/` est son prototype de depart : il n'est pas utilise par l'application.
 - **Benevole** (Mariam) : `server/routes/activities.js`, `missions.js`, `registrations.js` et les pages Activities, details, My registrations.
 
+## Fonctionnalites ajoutees (Milestone 4)
+
+- **Delai d'annulation** : un benevole confirme peut quitter une mission jusqu'a **2 jours (48 h) avant** l'activite.
+  Le pop-up d'inscription l'annonce ; apres, le bouton est grise et l'API repond 409 (rien n'est supprime).
+- **Emails** : confirmation a chaque inscription (avec la date limite d'annulation) et **rappel 1-2 jours avant**.
+- **Recherche** des activites par **nom**, date et lieu (`GET /api/activities?title=...`).
+- Chaque page a sa propre adresse (`/activities/12`, `/my-registrations`...) : le refresh ne donne pas de 404.
+- Regles reglables dans `server/rules.js`.
+
 ## Lancer en local
 
 ```bash

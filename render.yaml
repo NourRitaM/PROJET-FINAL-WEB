@@ -1,0 +1,30 @@
+# Render Blueprint (Milestone 4) : Render > New > Blueprint > choisir ce depot.
+# Render cree l'API avec ces reglages et demande les valeurs marquees "sync: false".
+# Voir DEPLOYMENT.md etape 2.
+services:
+  - type: web
+    name: volunteer-organizer-api
+    runtime: node
+    plan: free
+    rootDir: server
+    # db:init est relancable : il cree les tables et ajoute les nouvelles colonnes a chaque deploiement
+    buildCommand: npm install && npm run db:init
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_SSL
+        value: "true"
+      - key: DATABASE_URL # URL Neon / Supabase (postgresql://...)
+        sync: false
+      - key: CLIENT_ORIGIN # adresse Vercel, https://, sans / final
+        sync: false
+      - key: JWT_SECRET # longue valeur aleatoire generee par Render
+        generateValue: true
+      - key: CRON_SECRET # a recopier dans les secrets GitHub (rappels par email)
+        generateValue: true
+      - key: RESEND_API_KEY # cle Resend (laisser vide = emails ignores)
+        sync: false
+      - key: EMAIL_FROM # optionnel, ex. Volunteer Organizer <noreply@votre-domaine>
+        sync: false

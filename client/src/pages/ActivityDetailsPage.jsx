@@ -6,6 +6,16 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { ConfirmDialog } from '../components/ConfirmDialog.jsx';
 import { Hero } from '../components/Hero.jsx';
 
+// Doit rester egal a CANCEL_DEADLINE_DAYS dans server/rules.js (le serveur reste le vrai juge)
+const CANCEL_DEADLINE_DAYS = 2;
+
+// "2026-12-12" -> "2026-12-10"
+function cancelDeadline(date) {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - CANCEL_DEADLINE_DAYS);
+  return d.toISOString().slice(0, 10);
+}
+
 export function ActivityDetailsPage({ activityId, onBack }) {
   const { user } = useAuth();
   const { data, loading, error, reload } = useApi(`/api/activities/${activityId}`);
@@ -88,8 +98,8 @@ export function ActivityDetailsPage({ activityId, onBack }) {
           title={`You want to be part of "${data.title}"?`}
           message={
             pending.spots_left > 0
-              ? `Mission: ${pending.title}. Confirm to take your spot, or discard to cancel.`
-              : `Mission: ${pending.title} is full. Confirm to join the waiting list, or discard to cancel.`
+              ? `Mission: ${pending.title}. You can cancel your registration until ${cancelDeadline(data.date)} (48 hours before the activity). After that, you can no longer leave this mission. Confirm to take your spot, or discard.`
+              : `Mission: ${pending.title} is full. Confirm to join the waiting list (you can always leave a waiting list), or discard.`
           }
           confirmLabel="Confirm"
           cancelLabel="Discard"

@@ -13,12 +13,16 @@ function isValidDate(text) {
   return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(text);
 }
 
-// GET /api/activities?date=2026-12-31&location=campus  (activites a venir, ouvertes)
-// Les deux filtres sont optionnels. Les valeurs passent TOUJOURS en parametres ($1, $2).
+// GET /api/activities?title=beach&date=2026-12-31&location=campus  (activites a venir, ouvertes)
+// Les trois filtres sont optionnels. Les valeurs passent TOUJOURS en parametres ($1, $2).
 activitiesRouter.get('/', requireAuth, async (req, res) => {
+  const title = typeof req.query.title === 'string' ? req.query.title.trim() : '';
   const date = typeof req.query.date === 'string' ? req.query.date.trim() : '';
   const location = typeof req.query.location === 'string' ? req.query.location.trim() : '';
 
+  if (title.length > 100) {
+    return res.status(400).json({ error: 'title is too long (max 100 characters)' });
+  }
   if (date && !isValidDate(date)) {
     return res.status(400).json({ error: 'date must look like YYYY-MM-DD' });
   }
@@ -48,8 +52,9 @@ activitiesRouter.get('/', requireAuth, async (req, res) => {
         AND a.date >= CURRENT_DATE   -- activites a venir seulement
         AND ($1::date IS NULL OR a.date = $1::date)
         AND ($2::text IS NULL OR a.location ILIKE '%' || $2::text || '%')
+        AND ($3::text IS NULL OR a.title ILIKE '%' || $3::text || '%')
       ORDER BY a.date, a.start_time`,
-    [date || null, location || null] // filtre vide -> NULL -> pas de filtre
+    [date || null, location || null, title || null] // filtre vide -> NULL -> pas de filtre
   );
   res.json(rows);
 });

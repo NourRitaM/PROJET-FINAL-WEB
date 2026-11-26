@@ -116,6 +116,24 @@ describe('input validation (400 before the database is touched)', () => {
   });
 });
 
+describe('POST /api/cron/reminders (protected by CRON_SECRET)', () => {
+  it('does not exist when CRON_SECRET is not configured (404)', async () => {
+    delete process.env.CRON_SECRET;
+    expect((await request(app).post('/api/cron/reminders')).status).toBe(404);
+  });
+
+  it('rejects a missing or wrong secret (401), before touching the database', async () => {
+    process.env.CRON_SECRET = 'right-secret';
+    try {
+      expect((await request(app).post('/api/cron/reminders')).status).toBe(401);
+      const wrong = await request(app).post('/api/cron/reminders').set('Authorization', 'Bearer wrong-secret');
+      expect(wrong.status).toBe(401);
+    } finally {
+      delete process.env.CRON_SECRET;
+    }
+  });
+});
+
 describe('hardening (Session 21)', () => {
   it('sends secure headers and hides X-Powered-By', async () => {
     const res = await request(app).get('/api/health');

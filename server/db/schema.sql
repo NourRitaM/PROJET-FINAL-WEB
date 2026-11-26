@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS registrations (
   UNIQUE (mission_id, user_id)
 );
 
+-- Rappel par email 1-2 jours avant l'activite : date d'envoi, NULL = pas encore envoye
+-- (un seul rappel par inscription, voir server/email/reminders.js). Relancable sur une base existante.
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMP;
+
 CREATE INDEX IF NOT EXISTS idx_activities_organizer ON activities(organizer_id);
 CREATE INDEX IF NOT EXISTS idx_missions_activity    ON missions(activity_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_user   ON registrations(user_id);

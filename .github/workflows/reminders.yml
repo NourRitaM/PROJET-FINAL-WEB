@@ -1,0 +1,33 @@
+# Rappels par email 1-2 jours avant une activite.
+# Render (offre gratuite) endort l'API quand personne ne visite le site : son minuteur interne
+# ne tourne donc pas la nuit. Ce workflow appelle l'API une fois par jour pour la reveiller
+# et envoyer les rappels du jour (chaque rappel ne part qu'une fois, voir server/email/reminders.js).
+#
+# A configurer une fois dans GitHub : Settings > Secrets and variables > Actions > New repository secret
+#   API_URL     = https://VOTRE-API.onrender.com   (sans / final)
+#   CRON_SECRET = la meme valeur que CRON_SECRET dans Render
+# Sans ces deux secrets, le workflow ne fait rien (il reste vert).
+name: Reminder emails
+on:
+  schedule:
+    - cron: '0 6 * * *' # tous les jours a 06:00 UTC (08:00 ou 09:00 a Beyrouth)
+  workflow_dispatch: # bouton "Run workflow" dans l'onglet Actions, pour tester a la main
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call POST /api/cron/reminders
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$API_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Secrets API_URL / CRON_SECRET not set: nothing to do."
+            exit 0
+          fi
+          # --retry : le premier appel peut echouer pendant que Render reveille l'API
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            -X POST -H "Authorization: Bearer $CRON_SECRET" \
+            "$API_URL/api/cron/reminders"

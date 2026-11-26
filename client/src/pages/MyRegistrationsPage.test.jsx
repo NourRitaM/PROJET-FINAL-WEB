@@ -8,8 +8,15 @@ const registrations = [
     id: 1, status: 'waiting', waiting_position: 2, mission_id: 5, mission_title: 'Solo mission',
     activity_id: 3, activity_title: 'Food drive', activity_status: 'open',
     date: '2026-12-12', start_time: '10:00', end_time: '15:00', location: 'Campus Hall',
+    can_cancel: true, cancel_deadline: '2026-12-10',
   },
 ];
+
+// Inscription confirmee a moins de 2 jours de l'activite : l'API renvoie can_cancel = false
+const tooLate = {
+  ...registrations[0], id: 2, status: 'confirmed', waiting_position: null,
+  date: '2026-12-01', can_cancel: false, cancel_deadline: '2026-11-29',
+};
 
 beforeEach(() => localStorage.clear());
 
@@ -48,5 +55,27 @@ it('keeps the registration when the user clicks No', async () => {
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(screen.getByText('Solo mission')).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledTimes(1); // aucun DELETE envoye
+});
+
+it('shows the cancel deadline of a confirmed registration', async () => {
+  const confirmed = { ...registrations[0], status: 'confirmed', waiting_position: null };
+  globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [confirmed] });
+  render(<MyRegistrationsPage />);
+
+  expect(await screen.findByText('You can cancel until 2026-12-10.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Delete registration' })).toBeEnabled();
+});
+
+it('disables Delete after the deadline (less than 2 days before the activity)', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [tooLate] });
+  globalThis.fetch = fetchMock;
+  render(<MyRegistrationsPage />);
+
+  expect(await screen.findByText('Too late to cancel: the deadline was 2026-11-29.')).toBeInTheDocument();
+  const button = screen.getByRole('button', { name: 'Delete registration' });
+  expect(button).toBeDisabled();
+  await userEvent.click(button);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledTimes(1); // aucun DELETE envoye
 });

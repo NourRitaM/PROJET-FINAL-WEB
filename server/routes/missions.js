@@ -5,6 +5,7 @@ import express from 'express';
 import { query } from '../db/pool.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { requireRole } from '../middleware/requireRole.js';
+import { notifyMissionRegistered } from '../email/notifications.js';
 
 const missionsRouter = express.Router();
 
@@ -64,6 +65,10 @@ missionsRouter.post('/:id/register', requireAuth, requireRole('volunteer'), asyn
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Mission not found or activity cancelled' });
     }
+
+    // Email "You are registered" (ou liste d'attente) : sans await, la reponse n'attend pas
+    notifyMissionRegistered(rows[0].id).catch((err) => console.error('[email]', err.message));
+
     res.status(201).json(rows[0]);
   } catch (err) {
     // 23505 = UNIQUE (mission_id, user_id) : deja inscrit a cette mission

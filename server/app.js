@@ -12,6 +12,7 @@ import missionsRouter from './routes/missions.js';
 import registrationsRouter from './routes/registrations.js';
 import organizerRouter from './routes/organizer.js';
 import organizerMissionsRouter from './routes/organizerMissions.js';
+import cronRouter from './routes/cron.js';
 
 const app = express();
 
@@ -64,6 +65,9 @@ app.use('/api/registrations', registrationsRouter);
 // Partie organisateur : activites et missions (chaque route est protegee dans son fichier)
 app.use('/api/organizer', organizerMissionsRouter);
 app.use('/api/organizer', organizerRouter);
+
+// Rappels par email declenches par GitHub Actions (protege par CRON_SECRET, voir routes/cron.js)
+app.use('/api/cron', cronRouter);
 
 // Aucune route ne correspond (apres toutes les routes)
 app.use((req, res) => {

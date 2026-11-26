@@ -40,6 +40,8 @@ it('registers the volunteer to a mission', async () => {
 
   await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
   expect(screen.getByRole('dialog')).toHaveTextContent('You want to be part of "Food drive"?');
+  expect(screen.getByRole('dialog')).toHaveTextContent('until 2026-12-10');
+  expect(screen.getByRole('dialog')).toHaveTextContent('48 hours');
   expect(fetchMock).toHaveBeenCalledTimes(1); // pas d'inscription avant Confirm
   await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 

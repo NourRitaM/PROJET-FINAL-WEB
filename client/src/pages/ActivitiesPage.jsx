@@ -1,16 +1,18 @@
-// Liste des activites + recherche par date / lieu (Session 14 : state, Session 20 : fetch + hook).
+// Liste des activites + recherche par nom / date / lieu (Session 14 : state, Session 20 : fetch + hook).
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import { Hero } from '../components/Hero.jsx';
 
 export function ActivitiesPage({ onOpenActivity }) {
   // Ce que la personne tape (formulaire) et ce qui est reellement cherche (filtres appliques)
+  const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
-  const [filters, setFilters] = useState({ date: '', location: '' });
+  const [filters, setFilters] = useState({ title: '', date: '', location: '' });
 
   // Construit /api/activities?date=...&location=... (valeurs encodees pour l'URL)
   const params = new URLSearchParams();
+  if (filters.title) params.set('title', filters.title);
   if (filters.date) params.set('date', filters.date);
   if (filters.location) params.set('location', filters.location);
   const path = '/api/activities' + (params.toString() ? `?${params}` : '');
@@ -19,13 +21,14 @@ export function ActivitiesPage({ onOpenActivity }) {
 
   function handleSearch(e) {
     e.preventDefault();
-    setFilters({ date, location: location.trim() });
+    setFilters({ title: title.trim(), date, location: location.trim() });
   }
 
   function handleReset() {
+    setTitle('');
     setDate('');
     setLocation('');
-    setFilters({ date: '', location: '' });
+    setFilters({ title: '', date: '', location: '' });
   }
 
   return (
@@ -34,6 +37,15 @@ export function ActivitiesPage({ onOpenActivity }) {
     <main>
 
       <form className="search-form" onSubmit={handleSearch}>
+        <label>
+          Name
+          <input
+            value={title}
+            maxLength={100}
+            placeholder="e.g. beach cleanup"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </label>
         <label>
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />

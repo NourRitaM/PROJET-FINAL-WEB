@@ -33,6 +33,21 @@ it('sends the date and location filters to the API', async () => {
   });
 });
 
+it('sends the activity name to the API (search by name)', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => list });
+  globalThis.fetch = fetchMock;
+  render(<ActivitiesPage onOpenActivity={() => {}} />);
+  await screen.findByText('Library help');
+
+  await userEvent.type(screen.getByLabelText('Name'), 'library');
+  await userEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+  await vi.waitFor(() => {
+    const urls = fetchMock.mock.calls.map((c) => c[0]);
+    expect(urls.some((u) => u.includes('title=library'))).toBe(true);
+  });
+});
+
 it('shows the spots left for each mission (2/3)', async () => {
   const withMissions = [{
     ...list[0],

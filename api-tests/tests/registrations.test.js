@@ -185,3 +185,68 @@ describe('No two missions at the same time', () => {
     }
   });
 });
+
+// Regle de l'equipe (server/rules.js) : un benevole confirme peut quitter une mission
+// jusqu'a 2 jours avant l'activite. Apres : 409 et rien n'est supprime.
+describe('Cancel deadline: 2 days before the activity', () => {
+  const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  let frankToken;
+  let soonActivityId;
+  let laterActivityId;
+  let soonRegId;
+  let laterRegId;
+
+  const createActivity = async (days) => {
+    const res = await api().post('/api/organizer/activities').set(auth(organizerToken)).send({
+      title: `Deadline test J+${days} ${stamp}`, description: 'Created by the API tests',
+      date: inDays(days), time: '08:00', endTime: '09:00', location: 'Test Hall',
+      missions: [{ name: 'Helper', capacity: 3 }],
+    });
+    expect(res.status).toBe(201);
+    return res.body.id;
+  };
+  const registerToFirstMission = async (activityId) => {
+    const details = await api().get(`/api/activities/${activityId}`).set(auth(frankToken));
+    const res = await api().post(`/api/missions/${details.body.missions[0].id}/register`).set(auth(frankToken));
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe('confirmed');
+    return res.body.id;
+  };
+
+  it('setup: Frank registers to an activity tomorrow and one in 10 days', async () => {
+    frankToken = (await api().post('/api/auth/signup').send(makeVolunteer('frank'))).body.token;
+    soonActivityId = await createActivity(1);
+    laterActivityId = await createActivity(10);
+    soonRegId = await registerToFirstMission(soonActivityId);
+    laterRegId = await registerToFirstMission(laterActivityId);
+  });
+
+  it('refuses to cancel less than 2 days before the activity (409), registration kept', async () => {
+    const res = await api().delete(`/api/registrations/${soonRegId}`).set(auth(frankToken));
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain('Too late to cancel');
+    const mine = await api().get('/api/registrations/mine').set(auth(frankToken));
+    expect(mine.body.some((r) => r.id === soonRegId)).toBe(true);
+  });
+
+  it('still allows cancelling 2 days or more before the activity (200)', async () => {
+    const res = await api().delete(`/api/registrations/${laterRegId}`).set(auth(frankToken));
+    expect(res.status).toBe(200);
+  });
+
+  it('cleans up: both test activities are cancelled', async () => {
+    for (const id of [soonActivityId, laterActivityId]) {
+      const res = await api().patch(`/api/organizer/activities/${id}`)
+        .set(auth(organizerToken)).send({ status: 'cancelled' });
+      expect(res.status).toBe(204);
+    }
+  });
+});
+
+describe('Search by activity name', () => {
+  it('filters by title (partial, case-insensitive)', async () => {
+    const res = await api().get('/api/activities?title=BEACH').set(auth(carolToken));
+    expect(res.status).toBe(200);
+    expect(res.body.every((a) => a.title.toLowerCase().includes('beach'))).toBe(true);
+  });
+});

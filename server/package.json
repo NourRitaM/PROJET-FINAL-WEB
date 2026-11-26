@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "API Express + PostgreSQL pour Volunteer Activity Organizer",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
