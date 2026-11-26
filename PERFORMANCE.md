@@ -27,12 +27,10 @@ The production preview was audited instead of the development server.
 | Best Practices | 96 | 96 | 100 |
 | SEO | 83 | 100 | 100 |
 
-The SEO and Best Practices scores improved.
-The measured Performance score remained unchanged.
+The SEO and Best Practices scores improved. The Performance score remained unchanged.
 
 Lighthouse scores are estimates and can vary between runs.
-An Accessibility score of 100 covers automated checks only;
-it does not replace manual accessibility testing.
+An Accessibility score of 100 covers automated checks only; it does not replace manual accessibility testing.
 
 ## Initial performance metrics
 
@@ -44,9 +42,7 @@ it does not replace manual accessibility testing.
 | Cumulative Layout Shift | 0.001 |
 | Speed Index | 3.1 s |
 
-These values belong to the initial report.
-Final metric values must be read from the corresponding final report;
-they are not assumed to be identical.
+These values were recorded during the initial audit.
 
 ## Changes made after the initial audit
 
@@ -81,8 +77,7 @@ Files:
 Lighthouse recorded a 404 error for `/favicon.ico`.
 An explicit favicon link referencing the existing logo was added.
 
-After rebuilding and repeating the audit,
-the Best Practices score increased from 96 to 100.
+After rebuilding and repeating the audit, the Best Practices score increased from 96 to 100.
 
 These changes did not modify backend files or application workflows.
 
@@ -90,8 +85,7 @@ These changes did not modify backend files or application workflows.
 
 ### Route-level code splitting
 
-`client/src/App.jsx` uses `React.lazy` and `Suspense`
-for five authenticated pages:
+`client/src/App.jsx` uses `React.lazy` and `Suspense` for five authenticated pages:
 
 - OrganizerPage
 - ActivitiesPage
@@ -100,9 +94,7 @@ for five authenticated pages:
 - MyRegistrationsPage
 
 The production build generates separate JavaScript chunks for these pages.
-
-No comparable build from before code splitting was measured,
-so no before/after bundle-size reduction is claimed.
+No comparable build from before code splitting was measured, so no before/after bundle-size reduction is claimed.
 
 ### Database indexes
 
@@ -113,21 +105,13 @@ so no before/after bundle-size reduction is claimed.
 - `missions(activity_id)`
 - `registrations(user_id)`
 
-These indexes were already present.
-No database performance benchmark was performed during this audit,
-and no measured database speed improvement is claimed.
+No database performance benchmark was performed, so no measured database speed improvement is claimed.
 
-## Remaining performance opportunity
+## Possible future improvement
 
-Lighthouse identified render-blocking resources, including
-the Google Fonts stylesheet.
-
-The report estimated potential savings of 450 ms.
-This is an estimate, not a measured improvement.
-
-Font loading was not changed during this verification.
-A separate performance optimization and a repeat audit are still needed
-to demonstrate a loading-performance improvement.
+Lighthouse identified render-blocking resources, including the Google Fonts stylesheet.
+The report estimated potential savings of 450 ms. This is an estimate, not a measured improvement.
+Font loading was left unchanged in this audit.
 
 ## Validation
 

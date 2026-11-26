@@ -1,105 +1,103 @@
-# Mise en ligne (version simple)
+# Deployment
 
-Ordre conseillé : **base de données → API → site → relier les deux**.
-Les noms de boutons des plateformes changent parfois : suivez l'idée, pas le libellé exact.
+Order: **database → API → website → connect the two**.
+Button names on the hosting platforms change from time to time; follow the idea rather than the exact label.
 
-## 1. Base de données : Neon (ou Supabase)
+Live deployment:
+- Website (Vercel): https://volunteer-activity-organizer.vercel.app
+- API (Render): https://volunteer-organizer-api.onrender.com
 
-1. Créer un projet gratuit, copier l'**URL de connexion** PostgreSQL (`postgresql://...`).
-2. Sur votre machine, dans `server/.env` : `DATABASE_URL=<cette URL>` et `DB_SSL=true`.
-3. `cd server && npm run db:init` : crée les 4 tables dans la base en ligne.
+## 1. Database: hosted PostgreSQL (Neon or Supabase)
 
-   Base déjà créée avant l'ajout des rappels ? Relancer `npm run db:init` une fois : il ajoute la colonne
-   `registrations.reminder_sent_at` sans rien effacer.
+1. Create a free project and copy the PostgreSQL **connection URL** (`postgresql://...`).
+2. On your machine, in `server/.env`: `DATABASE_URL=<this URL>` and `DB_SSL=true`.
+3. `cd server && npm run db:init` creates the 4 tables in the hosted database.
 
-## 2. API : Render (Web Service)
+   A database created before the reminders were added only needs `npm run db:init` once more: it adds the
+   `registrations.reminder_sent_at` column without erasing anything.
 
-**Le plus simple : le Blueprint.** Render → **New → Blueprint** → choisir ce dépôt. Le fichier `render.yaml`
-remplit tous les réglages ; Render génère `JWT_SECRET` et `CRON_SECRET` et vous demande seulement
-`DATABASE_URL`, `CLIENT_ORIGIN` (à remettre à l'étape 4), `RESEND_API_KEY` et `EMAIL_FROM`.
-La commande de build lance aussi `npm run db:init` : les tables sont créées (ou mises à jour) à chaque déploiement.
+## 2. API: Render (Web Service)
 
-**À la main** (si vous préférez) : Build Command `npm install && npm run db:init`, et ajouter `CRON_SECRET`
-(valeur aléatoire, voir « Rappels » plus bas).
+**Recommended: the Blueprint.** Render → **New → Blueprint** → choose this repository. The `render.yaml` file
+sets everything up; Render generates `JWT_SECRET` and `CRON_SECRET` and only asks for
+`DATABASE_URL`, `CLIENT_ORIGIN` (set in step 4), `RESEND_API_KEY` and `EMAIL_FROM`.
+The build command also runs `npm run db:init`, so the tables are created (or updated) at every deployment.
 
-1. Nouveau **Web Service** relié à votre dépôt GitHub.
-2. **Root Directory** : `server` · **Build Command** : `npm install` · **Start Command** : `npm start`.
-3. Variables d'environnement (réglages de Render, jamais dans git) :
+**Manual setup** (alternative): Build Command `npm install && npm run db:init`, and add `CRON_SECRET`
+(random value, see "Reminders" below).
 
-| Variable | Valeur |
+1. Create a **Web Service** linked to the GitHub repository.
+2. **Root Directory**: `server` · **Build Command**: `npm install` · **Start Command**: `npm start`.
+3. Environment variables (Render settings, never in git):
+
+| Variable | Value |
 |---|---|
-| `DATABASE_URL` | l'URL Neon / Supabase |
+| `DATABASE_URL` | the hosted database URL |
 | `DB_SSL` | `true` |
-| `JWT_SECRET` | une **nouvelle** valeur : `node -p "require('crypto').randomBytes(32).toString('hex')"` |
-| `NODE_ENV` | `production` (le serveur refuse alors de démarrer sans `CLIENT_ORIGIN`) |
-| `CLIENT_ORIGIN` | l'adresse du site Vercel, en `https://`, **sans `/` final** (à remplir à l'étape 4) |
-| `RESEND_API_KEY`, `EMAIL_FROM` | voir étape 5 |
+| `JWT_SECRET` | a **new** value: `node -p "require('crypto').randomBytes(32).toString('hex')"` |
+| `NODE_ENV` | `production` (the server then refuses to start without `CLIENT_ORIGIN`) |
+| `CLIENT_ORIGIN` | the Vercel website address, with `https://`, **no trailing `/`** (set in step 4) |
+| `RESEND_API_KEY`, `EMAIL_FROM` | see step 5 |
 
-4. Vérifier `https://VOTRE-API.onrender.com/api/health` → `{"status":"ok"}`.
-   (Offre gratuite : le premier appel après une pause peut prendre une minute.)
+4. Check `https://<your-api>.onrender.com/api/health` → `{"status":"ok"}`.
+   (Free plan: the first call after a pause can take a minute.)
 
-## 3. Site : Vercel
+## 3. Website: Vercel
 
-1. **New Project** relié au même dépôt.
-2. **Root Directory** : `client` · Framework : Vite · Build : `npm run build` · Output : `dist`.
-3. Variable d'environnement : `VITE_API_URL=https://VOTRE-API.onrender.com` (sans `/` final). Elle est lue **au build** : si tu la changes, redéploie.
-   Le fichier `client/vercel.json` (déjà dans le projet) évite le 404 au rafraîchissement d'une page ; pour Netlify, `client/public/_redirects` fait la même chose.
-4. Déployer, puis copier l'adresse du site.
+1. **New Project** linked to the same repository.
+2. **Root Directory**: `client` · Framework: Vite · Build: `npm run build` · Output: `dist`.
+3. Environment variable: `VITE_API_URL=https://<your-api>.onrender.com` (no trailing `/`). It is read **at build time**: if it changes, redeploy.
+   `client/vercel.json` (already in the project) avoids a 404 when a page is refreshed; for Netlify, `client/public/_redirects` does the same.
+4. Deploy, then copy the website address.
 
-## 4. Relier les deux
+## 4. Connect the two
 
-Dans Render, mettre `CLIENT_ORIGIN` = adresse Vercel exacte (même `https://`, pas de `/` final) et redéployer.
-Erreur CORS dans la console = ces deux adresses ne correspondent pas exactement.
+In Render, set `CLIENT_ORIGIN` to the exact Vercel address (same `https://`, no trailing `/`) and redeploy.
+A CORS error in the browser console means these two addresses do not match exactly.
 
-## 5. Emails : Resend
+If the website address changes later (project renamed, custom domain added), `CLIENT_ORIGIN` must be updated the same way.
 
-1. Créer un compte Resend et une **clé API** → `RESEND_API_KEY` dans Render.
-2. Sans domaine vérifié, laisser `EMAIL_FROM` vide (`onboarding@resend.dev`) : Resend n'envoie alors
-   **qu'à l'adresse du compte Resend** — suffisant pour tester l'inscription avec votre propre email.
-   Pour écrire à n'importe qui, vérifier un domaine dans Resend et mettre `EMAIL_FROM=Nom <adresse@votre-domaine>`.
-3. Sans `RESEND_API_KEY`, l'API fonctionne normalement : l'email est simplement ignoré (un avertissement dans les logs).
+## 5. Emails: Resend
 
-Où sont les deux emails :
-- **Inscription confirmée** : envoyé automatiquement à la création du compte (`server/routes/auth.js`).
-- **Activité annulée** : `notifyActivityCancelled(activityId)` est déjà appelée par `PATCH /api/organizer/activities/:id` avec `{ status: 'cancelled' }`.
+1. Create a Resend account and an **API key** → `RESEND_API_KEY` in Render.
+2. Without a verified domain, leave `EMAIL_FROM` empty (`onboarding@resend.dev`): Resend then sends
+   **only to the Resend account's own address**, which is enough to test registration with your own email.
+   To write to anyone, verify a domain in Resend and set `EMAIL_FROM=Name <address@your-domain>`.
+3. Without `RESEND_API_KEY`, the API works normally: emails are simply skipped (a warning appears in the logs).
+
+Where the emails are sent:
+- **Registration confirmed**: sent automatically when the account is created (`server/routes/auth.js`).
+- **Activity cancelled**: `notifyActivityCancelled(activityId)` is called by `PATCH /api/organizer/activities/:id` with `{ status: 'cancelled' }`.
 
 ## 6. CI (GitHub Actions)
 
-`.github/workflows/ci.yml` lance `npm test` côté `server/` et `client/` (et `npm run build`) à chaque push et pull request. Rouge = ne pas déployer. Render peut déployer automatiquement après un CI vert.
+`.github/workflows/ci.yml` runs `npm test` in `server/` and `client/` (and `npm run build`) on every push and pull request. A red run means the version must not be deployed. Render can deploy automatically after a green CI.
 
-## 7. Vérification finale
+## 7. Reminders (2 days before), even when Render is asleep
 
-```bash
-cd api-tests && API_URL=https://VOTRE-API.onrender.com npm test
-```
-Puis la checklist manuelle du `README.md` sur l'adresse Vercel.
+The API checks reminders at startup and then every hour. On the free plan, Render puts the API to sleep
+after about 15 minutes without visits: the `.github/workflows/reminders.yml` workflow wakes it up every day (06:00 UTC)
+by calling `POST /api/cron/reminders`. Setup:
 
-## Si ça ne marche pas : les 4 suspects
+1. Render: `CRON_SECRET` variable (generated by the Blueprint).
+2. GitHub: **Settings → Secrets and variables → Actions → New repository secret**:
+   `API_URL` = `https://<your-api>.onrender.com` (no trailing `/`) and `CRON_SECRET` = the same value as in Render.
+3. Test: **Actions → Reminder emails → Run workflow**. Expected response: `{"due":0,"sent":0}`.
 
-- `blocked by CORS policy` : `CLIENT_ORIGIN` ne correspond pas exactement à l'adresse Vercel.
-- Le site appelle `localhost:3000` : `VITE_API_URL` absente au build -> la définir puis redéployer.
-- 404 au rafraîchissement : `vercel.json` manquant.
-- Le serveur s'arrête au démarrage : variable d'environnement manquante, ou Neon/Supabase refuse la connexion (`DB_SSL=true`).
-
-Site cassé -> onglet Network. API cassée -> logs de Render.
-
-## Rappels par email (2 jours avant) : les faire partir même quand Render dort
-
-L'API vérifie les rappels au démarrage puis toutes les heures. Sur l'offre gratuite, Render endort l'API
-après ~15 min sans visite : le workflow `.github/workflows/reminders.yml` la réveille chaque jour (06:00 UTC)
-en appelant `POST /api/cron/reminders`. À faire une fois :
-
-1. Render : variable `CRON_SECRET` (générée par le Blueprint).
-2. GitHub : **Settings → Secrets and variables → Actions → New repository secret** :
-   `API_URL` = `https://VOTRE-API.onrender.com` (sans `/` final) et `CRON_SECRET` = la même valeur que dans Render.
-3. Tester : onglet **Actions → Reminder emails → Run workflow**. Réponse attendue : `{"due":0,"sent":0}`.
-
-## Vérification finale (Milestone 4)
+## 8. Final verification
 
 ```bash
-cd api-tests && API_URL=https://VOTRE-API.onrender.com npm test
+cd api-tests && API_URL=https://<your-api>.onrender.com npm test
 ```
-- `https://VOTRE-API.onrender.com/api/health` → `{"status":"ok"}`
-- **Depuis un téléphone en 4G** : créer un compte, s'inscrire à une mission, rafraîchir la page (pas de 404).
-- Remplacer les deux `A REMPLIR` en haut du `README.md` par les vraies adresses, puis
-  `git tag milestone-4 && git push --tags`.
+- `https://<your-api>.onrender.com/api/health` → `{"status":"ok"}`
+- **From a phone on 4G**: create an account, register for a mission, refresh the page (no 404).
+- Then the manual checklist of `README.md` on the Vercel address.
+
+## Troubleshooting: the 4 usual suspects
+
+- `blocked by CORS policy`: `CLIENT_ORIGIN` does not exactly match the Vercel address.
+- The website calls `localhost:3000`: `VITE_API_URL` was missing at build time → set it and redeploy.
+- 404 on page refresh: `vercel.json` missing.
+- The server stops at startup: missing environment variable, or the hosted database refuses the connection (`DB_SSL=true`).
+
+Broken website → Network tab. Broken API → Render logs.

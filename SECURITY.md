@@ -1,47 +1,47 @@
-# SECURITY.md : Session 21, "Break it, then harden it"
+# SECURITY.md — Session 21, "Break it, then harden it"
 
-Chaque trou : **attaque -> reponse AVANT -> correction -> reponse APRES**.
-Les attaques sont executables : `cd api-tests && npm test -- security` (API lancee + `db:seed`).
-Les cases `A REMPLIR` sont a completer avec TA reponse reelle (copie le curl et la reponse).
+For each weakness: **attack → fix → behavior of the hardened API**.
+The attacks are executable: `cd api-tests && npm test -- security` (API running + `db:seed` done).
 
-| # | Trou | Attaque | Correction dans le code | Etat |
-|---|------|---------|-------------------------|------|
-| 1 | IDOR | Un organisateur B modifie / supprime l'activite ou la mission de A ; un benevole annule l'inscription d'un autre | Toutes les requetes filtrent par `id` ET proprietaire (`organizer_id = $2`, `user_id = $2`) -> 404 | Corrige des le depart |
-| 2 | Mass assignment | `POST` avec `"role":"admin"`, `"organizer_id":1`, `"status":"cancelled"` | Le role est verifie (`organizer`/`volunteer` seulement), l'identite vient de `req.userId` (token), les champs sont lus un par un | Corrige des le depart |
-| 3 | Injection | `?location=' OR '1'='1`, email `{ "$ne": "x" }`, id `1;DROP TABLE users` | Requetes parametrees (`$1`), verification du TYPE (`typeof x === 'string'`), ids convertis avec `Number()` | Corrige des le depart |
-| 4 | XSS | Titre `<img src=x onerror=alert(1)>` | React affiche en texte ; aucun `dangerouslySetInnerHTML` ; emails : `esc()` ; helmet (CSP) | Corrige des le depart |
-| 5 | Force brute | 20 mauvais logins d'affilee | `loginLimiter` : 5 echecs / 15 min -> **429** | **Ajoute** (avant : jamais bloque) |
-| 6 | Taille du body | Body de 5 Mo sur `/signup` | `express.json({ limit: '10kb' })` -> **413** | **Ajoute** |
-| 7 | Inondation | 1000 requetes/min | `apiLimiter` : 300 / 15 min -> 429 | **Ajoute** |
-| 8 | En-tetes | `curl -I` sur l'API | `helmet()` (CSP, HSTS, nosniff), `X-Powered-By` retire | Corrige des le depart |
-| 9 | Secrets | `git log -p \| grep SECRET` | `.env` dans `.gitignore` (racine + server + client), `.env.example`, crash au demarrage si secret manquant, `NODE_ENV=production` exige `CLIENT_ORIGIN` | Corrige / complete |
-| 10 | Routes de demo | `GET /api/demo/organizer` | Routes **supprimees** de l'API | **Corrige** |
-| 11 | JWT | Token forge avec `alg: none` | `jwt.verify(..., { algorithms: ['HS256'] })` | **Ajoute** |
+| # | Weakness | Attack | Fix in the code | Status |
+|---|----------|--------|-----------------|--------|
+| 1 | IDOR | Organizer B edits / deletes organizer A's activity or mission; a volunteer cancels another volunteer's registration | Every query filters by `id` AND owner (`organizer_id = $2`, `user_id = $2`) → 404 | Built in from the start |
+| 2 | Mass assignment | `POST` with `"role":"admin"`, `"organizer_id":1`, `"status":"cancelled"` | The role is checked (`organizer`/`volunteer` only), identity comes from `req.userId` (token), fields are read one by one | Built in from the start |
+| 3 | Injection | `?location=' OR '1'='1`, email `{ "$ne": "x" }`, id `1;DROP TABLE users` | Parameterized queries (`$1`), TYPE checks (`typeof x === 'string'`), ids converted with `Number()` | Built in from the start |
+| 4 | XSS | Title `<img src=x onerror=alert(1)>` | React renders text only; no `dangerouslySetInnerHTML`; emails use `esc()`; helmet (CSP) | Built in from the start |
+| 5 | Brute force | 20 wrong logins in a row | `loginLimiter`: 5 failures / 15 min → **429** | **Added** |
+| 6 | Body size | 5 MB body on `/signup` | `express.json({ limit: '10kb' })` → **413** | **Added** |
+| 7 | Flooding | 1000 requests/min | `apiLimiter`: 300 / 15 min → 429 | **Added** |
+| 8 | Headers | `curl -I` on the API | `helmet()` (CSP, HSTS, nosniff), `X-Powered-By` removed | Built in from the start |
+| 9 | Secrets | `git log -p \| grep SECRET` | `.env` in `.gitignore` (root + server + client), `.env.example`, startup crash if a secret is missing, `NODE_ENV=production` requires `CLIENT_ORIGIN` | Built in / completed |
+| 10 | Demo routes | `GET /api/demo/organizer` | Demo routes **removed** from the API | **Fixed** |
+| 11 | JWT | Forged token with `alg: none` | `jwt.verify(..., { algorithms: ['HS256'] })` | **Added** |
 
-## Preuves avant / apres (a completer)
+## Before / after for the weaknesses added in this session
 
-Pour les trous 5, 6, 7, 10 et 11, le "avant" est le code de ton ancien `server.js`
-(pas de limiter, `express.json()` sans limite, routes `/api/demo/*`, `jwt.verify` sans liste d'algorithmes).
-Pour chaque trou, colle ici la vraie requete et la vraie reponse :
+For weaknesses 5, 6, 10 and 11, the "before" state is the code of the original `server.js`:
+no limiter, `express.json()` without a size limit, `/api/demo/*` routes, and `jwt.verify` without an algorithm list.
+These weaknesses were identified by reading that code; the old version was not run against the attacks.
 
-### Trou 5 : force brute
-- Attaque : `for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"a@b.co","password":"wrongpass1"}'; done`
-- Avant : A REMPLIR (20 x `401`, jamais de 429)
-- Apres : A REMPLIR (5 x `401` puis `429`)
+### Weakness 5 — brute force
+- Attack: `for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"a@b.co","password":"wrongpass1"}'; done`
+- Before: no limiter in the code, so failed logins were never blocked (no 429).
+- After: 5 failures return `401`, then the limiter returns `429`.
 
-### Trou 6 : body trop gros
-- Attaque : `curl -X POST localhost:3000/api/auth/signup -H "Content-Type: application/json" -d "{\"name\":\"$(head -c 20000 /dev/zero | tr '\0' x)\"}"`
-- Avant : A REMPLIR
-- Apres : A REMPLIR (`413`)
+### Weakness 6 — oversized body
+- Attack: `curl -X POST localhost:3000/api/auth/signup -H "Content-Type: application/json" -d "{\"name\":\"$(head -c 20000 /dev/zero | tr '\0' x)\"}"`
+- Before: `express.json()` had no size limit.
+- After: `413` (limit of 10 kB).
 
-### Trou 10 : routes de demo
-- Attaque : `curl -i localhost:3000/api/demo/organizer -H "Authorization: Bearer <token>"`
-- Avant : A REMPLIR (200 / 403)
-- Apres : A REMPLIR (404)
+### Weakness 10 — demo routes
+- Attack: `curl -i localhost:3000/api/demo/organizer -H "Authorization: Bearer <token>"`
+- Before: the demo routes existed in the API.
+- After: `404`, the routes no longer exist.
 
-## Limite connue (a mentionner a l'oral)
-Le token est dans `localStorage` : un XSS pourrait le lire (Session 21 / 19). C'est accepte pour le cours ;
-en production on utiliserait un cookie `httpOnly; secure; sameSite=lax`.
+## Known limitation
+
+The token is stored in `localStorage`: an XSS vulnerability could read it. This is accepted for the scope of the course;
+in a production application, a cookie with `httpOnly; secure; sameSite=lax` would be used instead.
 
 ## Manual verification — 18 November 2026
 
@@ -103,10 +103,13 @@ The X-Powered-By header was absent.
 
 Result: the API returned the expected security headers.
 Their presence alone does not prove complete application security.
-HTTPS deployment must be verified separately.
+
+### 4. Deployed API
+
+On the deployed API (`https://volunteer-organizer-api.onrender.com`), opening `/api/activities` without a token returns `{"error":"Missing token"}`: protected routes reject unauthenticated requests in production as well.
+The deployed API only accepts requests from the configured website origin (`CLIENT_ORIGIN`).
 
 ### Scope of this verification
 
 These are observations of the current protected version.
-No vulnerable previous version was executed, so these results
-are not a measured before/after security comparison.
+No vulnerable previous version was executed, so these results are not a measured before/after security comparison.

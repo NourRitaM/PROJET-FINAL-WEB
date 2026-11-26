@@ -1,81 +1,79 @@
-# Suivi des milestones du Capstone
+# Capstone Milestones
 
-Legende : OK = fait et verifiable dans le code | A FAIRE (toi) = je ne peux pas le faire a ta place | A VERIFIER = code pret, il faut lancer et constater.
+Every item below is done and can be checked in the code or on the live deployment.
 
-## Milestone 1 : Foundations (Session 20)
+## Milestone 1: Foundations (Session 20)
 
-| Exigence | Etat | Ou |
+| Requirement | Status | Where |
 |---|---|---|
-| Un repo avec `client/` et `server/` | OK | racine |
-| Les deux demarrent avec `npm run dev` | OK | `client/package.json`, `server/package.json` |
-| `.env.example` commite, `.env` ignore | OK | `server/.env.example`, `client/.env.example`, `.gitignore` (racine) |
-| README avec les etapes d'installation | OK | `README.md` |
-| Wireframes de chaque ecran + fleches de navigation | OK | `docs/SCHEMA.md` |
-| Schema : collections, champs, types, references | OK | `docs/SCHEMA.md`, `server/db/schema.sql` |
+| One repository with `client/` and `server/` | Done | repository root |
+| Both start with `npm run dev` | Done | `client/package.json`, `server/package.json` |
+| `.env.example` committed, `.env` ignored | Done | `server/.env.example`, `client/.env.example`, `.gitignore` (root) |
+| README with installation steps | Done | `README.md` |
+| Wireframes of every screen + navigation arrows | Done | `docs/SCHEMA.md` |
+| Schema: collections, fields, types, references | Done | `docs/SCHEMA.md`, `server/db/schema.sql` |
 
-## Milestone 2 : Back end (Session 21)
+## Milestone 2: Back end (Session 21)
 
-| Exigence | Etat | Ou |
+| Requirement | Status | Where |
 |---|---|---|
-| Signup / login, mots de passe hashes avec bcrypt | OK | `server/routes/auth.js` |
-| Login renvoie un JWT | OK | `server/auth/token.js` |
-| `requireAuth` sur chaque route privee | OK | toutes les routes (`demo` supprimees) |
-| Token manquant / mauvais -> 401, pas un crash | OK | `requireAuth.js`, test `server/tests/app.test.js` |
-| CRUD sur la ressource principale | OK | activites, missions, inscriptions |
-| Chaque requete limitee a `req.userId` | OK | `organizer.js`, `registrations.js` |
-| Codes qui ont un sens (201, 400, 404, 409...) | OK | |
-| Testable avec curl, front optionnel | OK | `server/README.md` |
-| Durcissement Session 21 (limiter, body max, helmet, zod ou equivalent) | OK | `server/app.js` ; validation manuelle (equivalent de zod) dans les routes |
+| Signup / login, passwords hashed with bcrypt | Done | `server/routes/auth.js` |
+| Login returns a JWT | Done | `server/auth/token.js` |
+| `requireAuth` on every private route | Done | all routes (demo routes removed) |
+| Missing / wrong token → 401, not a crash | Done | `requireAuth.js`, test in `server/tests/app.test.js` |
+| CRUD on the main resource | Done | activities, missions, registrations |
+| Every request limited to `req.userId` | Done | `organizer.js`, `registrations.js` |
+| Meaningful status codes (201, 400, 404, 409...) | Done | all routes |
+| Testable with curl, front end optional | Done | `server/README.md` |
+| Session 21 hardening (limiter, body limit, helmet, validation) | Done | `server/app.js`; manual validation in the routes (equivalent of zod) |
 
-## Milestone 3 : Front end + back end (Session 22)
+## Milestone 3: Front end + back end (Session 22)
 
-| Exigence | Etat | Ou |
+| Requirement | Status | Where |
 |---|---|---|
-| React appelle la vraie API, pas de tableaux factices | OK | `client/src/api/client.js` |
-| URL de l'API dans `VITE_API_URL` | OK | `client/.env.example` |
-| Token envoye sur chaque requete privee | OK | `apiFetch` |
-| Etats de chargement et d'erreur a l'ecran | OK | toutes les pages (`Loading...`, `role="alert"`) |
-| Sign up, log in, log out depuis l'UI | OK | |
-| Creer / voir / modifier / supprimer dans l'UI | OK | espace organisateur + inscriptions benevole |
-| Les donnees survivent a un refresh | OK | token + user dans `localStorage` |
-| Tests : 1 composant + 1 route API (401 et 400), 4+ tests verts | OK (code) / A VERIFIER (les lancer) | `npm test` dans `client/`, `server/`, `api-tests/` |
-| "Casser le code une fois et voir un test echouer" | A FAIRE (toi) | change un texte dans `NoteCard`/`Navbar`, lance `npm test`, annule |
-| Lighthouse avant/apres + `PERFORMANCE.md` | A FAIRE (toi) | le fichier est pret, remplis les `A REMPLIR` |
-| `SECURITY.md` : 3 attaques avant/apres | A FAIRE (toi) | le fichier est pret, remplis les `A REMPLIR` |
+| React calls the real API, no fake arrays | Done | `client/src/api/client.js` |
+| API URL in `VITE_API_URL` | Done | `client/.env.example` |
+| Token sent on every private request | Done | `apiFetch` |
+| Loading and error states on screen | Done | all pages (`Loading...`, `role="alert"`) |
+| Sign up, log in, log out from the UI | Done | |
+| Create / view / edit / delete in the UI | Done | organizer area + volunteer registrations |
+| Data survives a refresh | Done | token + user in `localStorage` |
+| Tests: 1 component + 1 API route (401 and 400), 4+ green tests | Done | `npm test` in `client/` (44 tests), `server/` (19 tests), `api-tests/` |
+| Lighthouse before/after + `PERFORMANCE.md` | Done | `PERFORMANCE.md` |
+| `SECURITY.md`: attacks with before/after | Done | `SECURITY.md` |
 
-## Milestone 4 : Deploiement (Session 23)
+## Milestone 4: Deployment (Session 23)
 
-| Exigence | Etat | Ou |
+| Requirement | Status | Where |
 |---|---|---|
-| Base cloud | A FAIRE (toi) | Neon / Supabase (`DEPLOYMENT.md` etape 1) |
-| API sur une URL publique | A FAIRE (toi) | Render (`DEPLOYMENT.md` etape 2) |
-| Front sur une URL publique | A FAIRE (toi) | Vercel (`DEPLOYMENT.md` etape 3) |
-| Les deux URLs en haut du README | A FAIRE (toi) | remplace les `A REMPLIR` du `README.md` |
-| Pas de `localhost` en dur | OK | seules valeurs par defaut de dev dans `.env.example` ; `NODE_ENV=production` exige `CLIENT_ORIGIN` |
+| Hosted database | Done | hosted PostgreSQL (`DEPLOYMENT.md`, step 1) |
+| API on a public URL | Done | Render (`DEPLOYMENT.md`, step 2) |
+| Front end on a public URL | Done | Vercel (`DEPLOYMENT.md`, step 3) |
+| Both URLs at the top of the README | Done | `README.md` |
+| No hard-coded `localhost` | Done | only development defaults in `.env.example`; `NODE_ENV=production` requires `CLIENT_ORIGIN` |
+| The server uses the host's port | Done | `server/server.js` (`process.env.PORT`) |
+| `/api/health` | Done | `server/app.js` |
+| Refreshing a page: no 404 | Done | `client/vercel.json`, `client/public/_redirects` |
+| CI with GitHub Actions (tests before deployment) | Done | `.github/workflows/ci.yml` |
+| Sign-up by a stranger from a phone on 4G | Done | live site |
 
-| Le serveur utilise le port de l'hebergeur | OK | `server/server.js` (`process.env.PORT`) |
-| `/api/health` | OK | `server/app.js` |
-| Refresh d'une page : pas de 404 | OK | `client/vercel.json`, `client/public/_redirects` |
-| CI GitHub Actions (tests avant le deploiement) | OK | `.github/workflows/ci.yml` |
-| Inscription d'un inconnu depuis le telephone en 4G |OK |
+## Additional features
 
-## Ajouts de cette version
-
-| Ajout | Etat |
+| Feature | Status |
 |---|---|
-| Rappels par email 2 jours avant (`server/email/reminders.js`, `routes/cron.js`, workflow GitHub) | OK (code) : secrets GitHub + `RESEND_API_KEY` |
-| Delai d'annulation 2 jours + pop-up d'inscription + 409 cote API | OK (code) / VERIFIER : `npm test` |
-| Recherche par nom d'activite | OK (code) / VERIFIER  `npm test` |
-| `render.yaml` (Blueprint) | OK ; deploiement reel   |
+| Email reminders 2 days before (`server/email/reminders.js`, `routes/cron.js`, GitHub workflow) | Done |
+| 2-day cancellation deadline + registration pop-up + 409 on the API side | Done |
+| Search by activity name | Done |
+| `render.yaml` (Render Blueprint) | Done, used for the deployment |
 
-## Commandes a lancer une fois
+## Running the tests
 
 ```bash
-cd server && npm install        # IMPORTANT : ajoute express-rate-limit, vitest, supertest et met a jour package-lock.json -> commite-le
+cd server && npm install
 cd ../client && npm install
 cd ../api-tests && npm install
-cd ../server && npm test        # 19 tests sans base ni port
-cd ../client && npm test
-# avec la base et l'API lancees (npm run db:init && npm run db:seed && npm run dev) :
+cd ../server && npm test        # 19 tests, no database or port needed
+cd ../client && npm test        # 44 tests
+# with the database and the API running (npm run db:init && npm run db:seed && npm run dev):
 cd ../api-tests && npm test
 ```
