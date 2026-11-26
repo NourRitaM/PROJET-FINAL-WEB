@@ -69,6 +69,9 @@ app.use('/api/organizer', organizerRouter);
 // Rappels par email declenches par GitHub Actions (protege par CRON_SECRET, voir routes/cron.js)
 app.use('/api/cron', cronRouter);
 
+app.get("/", (req, res) => {
+  res.send("Volunteer Activity Organizer API is running.");
+});
 // Aucune route ne correspond (apres toutes les routes)
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
